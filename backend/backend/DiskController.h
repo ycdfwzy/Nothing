@@ -15,8 +15,6 @@ private:
 	bool getUSNJournalInfo();
 
 private:
-	static const unsigned BUFFER_LEN = 1 << 16;
-
 	char diskName;
 
 	HANDLE hDsk;
