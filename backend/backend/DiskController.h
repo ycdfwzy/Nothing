@@ -9,10 +9,16 @@ class DiskController
 public:
 	DiskController(char diskName);
 
+	bool initial();
+
 	char DiskName() const { return this->diskName; }
 
 private:
+	bool createHandle();
+	bool createUSNJournal();
+	bool queryUSNJournal();
 	bool getUSNJournalInfo();
+	bool deleteUSNJournal();
 
 private:
 	char diskName;

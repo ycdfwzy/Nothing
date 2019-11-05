@@ -41,5 +41,5 @@ bool DiskControllerManager::addDisk(char diskName) {
 		return false;
 	}
 	disk_base[diskName] = new DiskController(diskName);
-	return true;
+	return disk_base[diskName]->initial();
 }
