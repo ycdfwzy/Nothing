@@ -1,7 +1,9 @@
 #include "DiskController.h"
+#include "FileBase.h"
 #include <cstring>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <tchar.h>
 
 using namespace std;
@@ -10,11 +12,11 @@ DiskController::DiskController(char diskName) {
 	this->diskName = diskName;
 }
 
-bool DiskController::initial() {
+bool DiskController::loadFilenames(FileBase* filebase) {
 	if (createHandle() &&
 		createUSNJournal() &&
 		queryUSNJournal() &&
-		getUSNJournalInfo() &&
+		getUSNJournalInfo(filebase) &&
 		deleteUSNJournal())
 		return true;
 	return false;
@@ -32,9 +34,9 @@ bool DiskController::createHandle() {
 		FILE_ATTRIBUTE_READONLY,
 		NULL);
 	if (this->hDsk == INVALID_HANDLE_VALUE) {
-		cerr << "create file failed!" << endl;
+		wcerr << L"create file failed!" << endl;
 		DWORD err = GetLastError();
-		cout << "error code: " << err << endl;
+		wcerr << L"error code: " << err << endl;
 		return false;
 	}
 	return true;
@@ -49,9 +51,9 @@ bool DiskController::createUSNJournal() {
 						&this->cujd,
 						sizeof(this->cujd),
 						NULL, 0, &br, NULL)) {
-		cerr << "create usn failed!" << endl;
+		wcerr << L"create usn failed!" << endl;
 		DWORD err = GetLastError();
-		cout << "error code: " << err << endl;
+		wcerr << L"error code: " << err << endl;
 		return false;
 	}
 	return true;
@@ -65,26 +67,27 @@ bool DiskController::queryUSNJournal() {
 						&this->ujd,
 						sizeof(this->ujd),
 						&br, NULL)) {
-		cerr << "get usn info failed!" << endl;
+		wcerr << L"get usn info failed!" << endl;
 		DWORD err = GetLastError();
-		cout << "error code: " << err << endl;
+		wcerr << L"error code: " << err << endl;
 		return false;
 	}
+	// wcout << ujd.MaxUsn << endl;
 	return true;
 }
 
 constexpr auto BUFFER_LEN = 1 << 12;
 CHAR buffer[BUFFER_LEN];
 
-bool DiskController::getUSNJournalInfo() {
+bool DiskController::getUSNJournalInfo(FileBase* filebase) {
 	MFT_ENUM_DATA_V0 med;
 	med.StartFileReferenceNumber = 0;
-	med.LowUsn = 0; // this->ujd.FirstUsn;
+	med.LowUsn = this->ujd.FirstUsn;
 	med.HighUsn = this->ujd.NextUsn;
 
 	DWORD lpBytesReturned;
 	PUSN_RECORD pusn_record;
-
+	//int cnt = 0;
 	memset(buffer, 0, sizeof(CHAR) * BUFFER_LEN);
 	while (DeviceIoControl(this->hDsk,
 							FSCTL_ENUM_USN_DATA,
@@ -92,11 +95,6 @@ bool DiskController::getUSNJournalInfo() {
 							buffer, BUFFER_LEN,
 							&lpBytesReturned,
 							NULL)) {
-	/*while (DeviceIoControl(this->hDsk,
-							FSCTL_READ_USN_JOURNAL,
-							&ReadData, sizeof(ReadData),
-							&buffer, BUFFER_LEN,
-							&lpBytesReturned, NULL)) {*/
 		DWORD retBytes = lpBytesReturned - sizeof(USN);
 		// first usn record
 		pusn_record = (PUSN_RECORD)(((PCHAR)buffer) + sizeof(USN));
@@ -106,10 +104,10 @@ bool DiskController::getUSNJournalInfo() {
 			for (int k = 0; k < pusn_record->FileNameLength / 2; k++)
 				filename[k] = pusn_record->FileName[k];
 			filename[pusn_record->FileNameLength / 2] = L'\0';
-			// wcout << wstring(filename) << endl;
-			this->ref2name[pusn_record->FileReferenceNumber] = filename;
+			filebase->add_file(filename,
+								pusn_record->FileReferenceNumber,
+								pusn_record->ParentFileReferenceNumber);
 			delete[] filename;
-			this->parent[pusn_record->FileReferenceNumber] = pusn_record->ParentFileReferenceNumber;
 
 			// next record
 			retBytes -= pusn_record->RecordLength;
@@ -119,9 +117,6 @@ bool DiskController::getUSNJournalInfo() {
 		med.StartFileReferenceNumber = *(USN*)& buffer;
 		memset(buffer, 0, sizeof(CHAR) * BUFFER_LEN);
 	}
-
-	//cout << "error code: " << GetLastError() << endl;
-	cout << "total files in volume " << diskName << ": " << this->ref2name.size() << endl;
 
 	return true;
 }
@@ -135,9 +130,9 @@ bool DiskController::deleteUSNJournal() {
 						&this->dujd,
 						sizeof(this->dujd),
 						NULL, 0, &br, NULL)) {
-		cerr << "delete usn failed!" << endl;
+		wcerr << L"delete usn failed!" << endl;
 		DWORD err = GetLastError();
-		cout << "error code: " << err << endl;
+		wcerr << L"error code: " << err << endl;
 		CloseHandle(this->hDsk);
 		return false;
 	}

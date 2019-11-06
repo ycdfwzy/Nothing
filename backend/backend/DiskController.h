@@ -4,12 +4,14 @@
 #include <unordered_set>
 #include <unordered_map>
 
+class FileBase;
+
 class DiskController
 {
 public:
 	DiskController(char diskName);
 
-	bool initial();
+	bool loadFilenames(FileBase*);
 
 	char DiskName() const { return this->diskName; }
 
@@ -17,7 +19,7 @@ private:
 	bool createHandle();
 	bool createUSNJournal();
 	bool queryUSNJournal();
-	bool getUSNJournalInfo();
+	bool getUSNJournalInfo(FileBase*);
 	bool deleteUSNJournal();
 
 private:
@@ -28,6 +30,4 @@ private:
 	DELETE_USN_JOURNAL_DATA dujd;
 	USN_JOURNAL_DATA ujd;
 
-	std::unordered_map<DWORDLONG, std::wstring> ref2name;
-	std::unordered_map<DWORDLONG, DWORDLONG> parent;
 };
