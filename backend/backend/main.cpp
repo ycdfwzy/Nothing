@@ -8,6 +8,7 @@
 #include <locale.h>
 #include <ctime>
 #include <unordered_map>
+#include <vector>
 #include "GeneralManager.h"
 
 using namespace std;
@@ -34,13 +35,15 @@ int main() {
 		start = clock();
 		if (manager->search(keyword, res, 'D')) {
 			wcout << "result: " << res.size() << endl;
-			/*for (const wstring& s : res) {
+			for (const wstring& s : res) {
 				wcout << s << endl;
-			}*/
+			}
 		}
 		end = clock();
 		wcout << (double)(end - start) / CLOCKS_PER_SEC << endl;
 	}
+
+	// 281474976715340
 	return 0;
 }
 

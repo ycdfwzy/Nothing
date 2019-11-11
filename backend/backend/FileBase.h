@@ -9,9 +9,16 @@
 
 struct FileName {
 	std::wstring name;		// filename
-	DWORDLONG ref;			// reference number
+	// DWORDLONG ref;			// reference number
 	DWORDLONG parent;		// reference number of parent
+
+	FileName(const std::wstring name = L"", DWORDLONG parent = 0) {
+		this->name = name;
+		this->parent = parent;
+	}
 };
+
+typedef std::pair<size_t, size_t> INTERVAL;
 
 class FileBase {
 public:
@@ -26,7 +33,7 @@ public:
 	bool search_by_name(const std::wstring&, std::vector<std::wstring>&, bool need_clear_res = true) const;
 
 	void count_files() const {
-		std::wcout << L"total files in volume " << diskName << L": " << this->ref2name.size() << std::endl;
+		std::wcout << L"total files in volume " << diskName << L": " << this->refmap.size() << std::endl;
 
 		/*int cnt = 0;
 		int max_cnt = 0;
@@ -48,11 +55,18 @@ public:
 		std::wcout << max_arg << L" maximum counts: " << max_cnt << std::endl;*/
 	}
 
+	bool doDFS();
+
+	bool getAllFiles(DWORDLONG, std::vector<DWORDLONG>&) const;
+
 private:
 	char diskName;
 
-	std::unordered_map<DWORDLONG, std::wstring> ref2name;
-	std::unordered_map<DWORDLONG, DWORDLONG> parent;
+	// std::unordered_map<DWORDLONG, std::wstring> ref2name;
+	// std::unordered_map<DWORDLONG, DWORDLONG> parent;
+	std::unordered_map<DWORDLONG, FileName> refmap;
+	std::vector<DWORDLONG> DFSseq; // dfs sequence
+	std::unordered_map<DWORDLONG, INTERVAL> interval;
 
 	std::unordered_multimap<WCHAR, DWORDLONG> index;
 };

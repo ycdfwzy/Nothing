@@ -27,6 +27,9 @@
     <ClCompile Include="GeneralManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FileContent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DiskController.h">
@@ -39,6 +42,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GeneralManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileContent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

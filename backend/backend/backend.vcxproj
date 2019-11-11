@@ -126,12 +126,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DiskController.cpp" />
+    <ClCompile Include="FileContent.cpp" />
     <ClCompile Include="GeneralManager.cpp" />
     <ClCompile Include="FileBase.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DiskController.h" />
+    <ClInclude Include="FileContent.h" />
     <ClInclude Include="GeneralManager.h" />
     <ClInclude Include="FileBase.h" />
     <ClInclude Include="resource.h" />

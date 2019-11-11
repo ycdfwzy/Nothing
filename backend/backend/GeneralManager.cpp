@@ -49,8 +49,10 @@ bool GeneralManager::addDisk(char diskName) {
 		disk_base.erase(diskName);
 		file_base.erase(diskName);
 	}
-	else
+	else {
 		file_base[diskName]->count_files();
+		file_base[diskName]->doDFS();
+	}
 	return flag;
 }
 
@@ -85,5 +87,20 @@ bool GeneralManager::search(const wstring& keyword,
 	}
 	if (file_base.find(diskName) == file_base.end())
 		return false;
+
+	//vector<DWORDLONG> res_;
+	//if (file_base.at(diskName)->getAllFiles(281474976715340u, res_)) {
+	//	wcout << res_.size() << endl;
+	//	for (DWORDLONG ref : res_) {
+	//		wstring fullpath;
+	//		file_base.at(diskName)->getPath(ref, fullpath);
+	//		wcout << fullpath << endl;
+	//	}
+	//}
+	//else
+	//{
+	//	wcout << L"can't get all files!" << endl;
+	//}
+
 	return file_base.at(diskName)->search_by_name(keyword, res);
 }
