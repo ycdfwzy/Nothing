@@ -12,7 +12,7 @@ struct FileName {
 	// DWORDLONG ref;			// reference number
 	DWORDLONG parent;		// reference number of parent
 
-	FileName(const std::wstring name = L"", DWORDLONG parent = 0) {
+	FileName(const std::wstring& name = L"", DWORDLONG parent = 0) {
 		this->name = name;
 		this->parent = parent;
 	}
@@ -55,15 +55,24 @@ public:
 		std::wcout << max_arg << L" maximum counts: " << max_cnt << std::endl;*/
 	}
 
-	bool doDFS();
+	bool preprocess();
 
-	bool getAllFiles(DWORDLONG, std::vector<DWORDLONG>&) const;
+	bool getAllFiles(DWORDLONG, std::vector<DWORDLONG>&, bool no_directory = true) const;
+
+	bool makeIndex();
+
+	bool getReference(const std::wstring&, DWORDLONG&) const;
+
+private:
+	bool removeFiles(DWORDLONG);
+	bool splitPath(const std::wstring&, std::vector<std::wstring>&) const;
+	void DFS(DWORDLONG, bool, const std::vector<DWORDLONG>&,
+		std::unordered_map<DWORDLONG, DWORDLONG>*,
+		std::unordered_map<DWORDLONG, DWORDLONG>*);
 
 private:
 	char diskName;
 
-	// std::unordered_map<DWORDLONG, std::wstring> ref2name;
-	// std::unordered_map<DWORDLONG, DWORDLONG> parent;
 	std::unordered_map<DWORDLONG, FileName> refmap;
 	std::vector<DWORDLONG> DFSseq; // dfs sequence
 	std::unordered_map<DWORDLONG, INTERVAL> interval;

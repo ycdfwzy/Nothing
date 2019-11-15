@@ -1,5 +1,6 @@
 #include "FileBase.h"
 #include <fstream>
+#include <functional>
 #include <stack>
 
 using namespace std;
@@ -39,14 +40,14 @@ void FileBase::add_file(const wstring& filename,
 						DWORDLONG ref_num,
 						DWORDLONG par_num) {
 	this->refmap[ref_num] = FileName(filename, par_num);
-	unordered_set<WCHAR> v;
+	/*unordered_set<WCHAR> v;
 	v.clear();
 	for (const WCHAR& c : filename) {
 		if (v.find(c) == v.end()) {
 			this->index.insert({ c, ref_num });
 			v.insert(c);
 		}
-	}
+	}*/
 }
 
 bool FileBase::search_by_name(const std::wstring& keyword,
@@ -71,30 +72,44 @@ bool FileBase::search_by_name(const std::wstring& keyword,
 	return true;
 }
 
-bool FileBase::doDFS() {
+bool FileBase::preprocess() {
+	// $RmMetadata
+	// System Volume Information
+	vector<DWORDLONG> to_delete;
 	// get root directory reference number
-	wstring path = L"X:\\";
+	wstring path = L"X:";
 	path[0] = this->diskName;
+	unordered_set<DWORDLONG> to_insert;
+	to_insert.clear();
 	for (const auto& p : refmap) {
-		if (refmap.find(p.second.parent) == refmap.end()) {
-			//wcout << p.second.parent << endl;
-			refmap[p.second.parent] = FileName(path, 0);
+		if (p.second.name == L"$RmMetadata" ||
+			p.second.name == L"System Volume Information") {
+			to_delete.push_back(p.first);
 		}
+		if (refmap.find(p.second.parent) == refmap.end()) {
+			// wcout << p.second.name << L" " << p.second.parent << endl;
+			to_insert.insert(p.second.parent);
+			if (p.second.name == L"$RmMetadata")
+				to_delete.push_back(p.second.parent);
+		}
+	}
+	for (auto& p : to_insert) {
+		refmap[p] = FileName(path);
 	}
 	//-------------------------------------------
 	// build tree
-	unordered_map<DWORDLONG, DWORDLONG>* firstSon = 
+	unordered_map<DWORDLONG, DWORDLONG>* firstSon =
 		new unordered_map<DWORDLONG, DWORDLONG>();
 	unordered_map<DWORDLONG, DWORDLONG>* nextSibling =
 		new unordered_map<DWORDLONG, DWORDLONG>();
-	stack<DWORDLONG> stk;
+	//stack<DWORDLONG> stk;
 	firstSon->clear();
 	nextSibling->clear();
 	for (const auto& p : refmap) {
 		if (p.second.parent == 0) {
-			this->interval[p.first] = make_pair(this->DFSseq.size(), 0);
+			/*this->interval[p.first] = make_pair(this->DFSseq.size(), 0);
 			this->DFSseq.push_back(p.first);
-			stk.push(p.first);
+			stk.push(p.first);*/
 			continue;
 		}
 		if (firstSon->find(p.second.parent) == firstSon->end()) {
@@ -107,42 +122,150 @@ bool FileBase::doDFS() {
 			firstSon->insert(make_pair(p.second.parent, p.first));
 		}
 	}
+	//-------------------------------------------
 	this->DFSseq.clear();
 	this->DFSseq.reserve(this->refmap.size());
-	//-------------------------------------------
-	// dfs without Recursion
-	while (!stk.empty()) {
-		DWORDLONG cur = stk.top();
-		auto p = firstSon->find(cur);
-		if (p != firstSon->end()) {
-			this->interval[p->second] = make_pair(this->DFSseq.size(), 0);
-			this->DFSseq.push_back(p->second);
-			stk.push(p->second);
-			firstSon->erase(cur);
-			if (nextSibling->find(p->second) != nextSibling->end())
-				firstSon->insert(make_pair(cur, nextSibling->at(p->second)));
-		}
+
+	for (auto& p : to_insert)
+		if (find(to_delete.begin(), to_delete.end(), p) == to_delete.end())
+			DFS(p, false, to_delete, firstSon, nextSibling);
 		else
-		{
-			size_t s = this->interval[cur].first;
-			this->interval[cur] = make_pair(s, this->DFSseq.size());
-			stk.pop();
-		}
-	}
-	// wcout << this->DFSseq.size() << endl;
+			DFS(p, true, to_delete, firstSon, nextSibling);
+	// wcout << this->refmap.size() << endl;
 
 	delete firstSon;
 	delete nextSibling;
 
-	return false;
+	this->makeIndex();
+
+	return true;
 }
 
 bool FileBase::getAllFiles(DWORDLONG root,
-						   vector<DWORDLONG>& res) const {
+						   vector<DWORDLONG>& res,
+						   bool no_directory) const {
 	if (this->interval.find(root) == this->interval.end())
 		return false;
 	INTERVAL itv = this->interval.at(root);
-	res.assign(this->DFSseq.begin() + itv.first,
-			   this->DFSseq.begin() + itv.second);
+	if (!no_directory) {
+		res.assign(this->DFSseq.begin() + itv.first,
+				   this->DFSseq.begin() + itv.second);
+	}
+	else
+	{
+		res.clear();
+		res.reserve(itv.second - itv.first);
+		for (int i = itv.first; i < itv.second; i++) {
+			DWORDLONG ref = this->DFSseq[i];
+			if (this->interval.at(ref).first + 1 >= this->interval.at(ref).second) {
+				res.push_back(ref);
+			}
+		}
+	}
+	
 	return true;
+}
+
+bool FileBase::makeIndex() {
+	unordered_set<WCHAR> v;
+	for (const auto& p : refmap) {
+		v.clear();
+		for (const WCHAR& c : p.second.name) {
+			if (v.find(c) != v.end())
+				continue;
+			v.insert(c);
+			this->index.insert(make_pair(c, p.first));
+		}
+	}
+	return true;
+}
+
+bool FileBase::getReference(const std::wstring& path,
+							DWORDLONG& ref) const {
+	vector<wstring> splited_path;
+	if (!this->splitPath(path, splited_path))
+		return false;
+
+	INTERVAL itv = make_pair(0, this->DFSseq.size());
+	for (const wstring& filename : splited_path) {
+		// wcout << filename << endl;
+		size_t idx = itv.first;
+		while (idx < itv.second) {
+			DWORDLONG ref_ = this->DFSseq[idx];
+			// wcout << this->refmap.at(ref_).name << endl;
+			if (this->refmap.at(ref_).name == filename) {
+				ref = ref_;
+				itv = make_pair(interval.at(ref_).first+1, interval.at(ref_).second);
+				break;
+			}
+			idx = interval.at(ref_).second;
+		}
+		if (idx >= itv.second)
+			return false;
+	}
+
+	return true;
+}
+
+bool FileBase::removeFiles(DWORDLONG root) {
+	if (this->interval.find(root) == this->interval.end())
+		return false;
+	INTERVAL itv = this->interval.at(root);
+	for (int i = itv.first; i < itv.second; i++) {
+		DWORDLONG ref = this->DFSseq.at(i);
+		refmap.erase(ref);
+		interval.erase(ref);
+	}
+	return true;
+}
+
+bool FileBase::splitPath(const std::wstring& path,
+						 std::vector<std::wstring>& res) const {
+	size_t last = 0;
+	size_t p = path.find(L'\\');
+	res.clear();
+	while (last < path.npos) {
+		wstring filename = (p == path.npos ?
+			path.substr(last) : path.substr(last, p - last));
+		if (filename.empty())
+			break;
+		res.push_back(filename);
+		last = (p == path.npos ? p : p + 1);
+		p = path.find(L'\\', last);
+	}
+	return true;
+}
+
+void FileBase::DFS(DWORDLONG cur, bool need_deleting, const vector<DWORDLONG>& to_delete,
+				   unordered_map<DWORDLONG, DWORDLONG>* firstSon,
+				   unordered_map<DWORDLONG, DWORDLONG>* nextSibling) {
+	size_t s, e;
+	if (!need_deleting) {
+		s = this->DFSseq.size();
+		this->DFSseq.push_back(cur);
+	}
+	else {
+		this->refmap.erase(cur);
+	}
+
+	auto p = firstSon->find(cur);
+	if (p != firstSon->end()) {
+		if (find(to_delete.begin(), to_delete.end(), p->second) == to_delete.end())
+			DFS(p->second, need_deleting, to_delete, firstSon, nextSibling);
+		else
+			DFS(p->second, true, to_delete, firstSon, nextSibling);
+	}
+
+	if (!need_deleting) {
+		e = this->DFSseq.size();
+		this->interval[cur] = make_pair(s, e);
+	}
+
+	auto q = nextSibling->find(cur);
+	if (q != nextSibling->end()) {
+		if (find(to_delete.begin(), to_delete.end(), q->second) == to_delete.end())
+			DFS(q->second, need_deleting, to_delete, firstSon, nextSibling);
+		else
+			DFS(q->second, true, to_delete, firstSon, nextSibling);
+	}
 }

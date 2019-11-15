@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <iostream>
 #include <tchar.h>
+#include <comdef.h>
 
 using namespace std;
 
@@ -51,7 +52,7 @@ bool GeneralManager::addDisk(char diskName) {
 	}
 	else {
 		file_base[diskName]->count_files();
-		file_base[diskName]->doDFS();
+		file_base[diskName]->preprocess();
 	}
 	return flag;
 }
@@ -73,7 +74,7 @@ bool GeneralManager::save(char diskName) const {
 	return file_base.at(diskName)->save(path);
 }
 
-bool GeneralManager::search(const wstring& keyword,
+bool GeneralManager::search_name(const wstring& keyword,
 							vector<wstring>& res,
 							CHAR diskName) const {
 	if (diskName == 0) {
@@ -88,19 +89,51 @@ bool GeneralManager::search(const wstring& keyword,
 	if (file_base.find(diskName) == file_base.end())
 		return false;
 
-	//vector<DWORDLONG> res_;
-	//if (file_base.at(diskName)->getAllFiles(281474976715340u, res_)) {
-	//	wcout << res_.size() << endl;
-	//	for (DWORDLONG ref : res_) {
-	//		wstring fullpath;
-	//		file_base.at(diskName)->getPath(ref, fullpath);
-	//		wcout << fullpath << endl;
-	//	}
-	//}
-	//else
-	//{
-	//	wcout << L"can't get all files!" << endl;
-	//}
-
 	return file_base.at(diskName)->search_by_name(keyword, res);
+}
+
+bool GeneralManager::search_content(const wstring& keyword,
+							const wstring& path,
+							vector<wstring>& res) {
+	// precheck
+	if (path.empty()) {
+		
+	}
+	CHAR diskName = path[0];
+	if (path[0] > L'z' || file_base.find(diskName) == file_base.end()) {
+		return false;
+	}
+
+	contentSearch = new FileContent();	
+	FileBase* fb = file_base.at(diskName);
+
+	// get path reference
+	DWORDLONG pathRef;
+	if (!fb->getReference(path, pathRef)) {
+		return false;
+	}
+
+	vector<DWORDLONG> allFiles;
+	if (!fb->getAllFiles(pathRef, allFiles))
+		return false;
+	for (DWORDLONG fileRef : allFiles) {
+		wstring path;
+		if (fb->getPath(fileRef, path)) {
+			contentSearch->add_file(path);
+		}
+	}
+
+	int cnt = 0;
+	wstring curpath;
+	res.clear();
+	while (!contentSearch->empty()) {
+		if (contentSearch->next(keyword, cnt, curpath) && cnt > 0) {
+			wcout << cnt << L" times in " << curpath << endl;
+			res.push_back(curpath);
+		}
+	}
+	
+	delete contentSearch;
+	contentSearch = nullptr;
+	return true;
 }
