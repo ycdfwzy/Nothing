@@ -1,23 +1,27 @@
 #pragma once
+#include "utils.h"
 #include <Windows.h>
 #include <string>
 #include <cstring>
 #include <vector>
 #include <algorithm>
 
+namespace Nothing {
+
 class FileContent {
 public:
 	FileContent() {}
 
-	bool add_file(const std::wstring& path) {
+	Result add_file(const std::wstring& path) {
 		files.push_back(path);
-		return true;
+		return Result::SUCCESS;
 	}
 
-	bool empty() const { return  files.empty(); }
-	bool next(const std::wstring&, int&, std::wstring&);
+	bool empty() const { return files.empty(); }
+	Result next(const std::wstring&, int&, std::wstring&);
 
 private:
 	std::vector<std::wstring> files;
 };
 
+} // namespace Nothing

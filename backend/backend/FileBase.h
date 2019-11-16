@@ -1,4 +1,5 @@
 #pragma once
+#include "utils.h"
 #include <Windows.h>
 #include <vector>
 #include <iostream>
@@ -6,6 +7,8 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+
+namespace Nothing {
 
 struct FileName {
 	std::wstring name;		// filename
@@ -24,13 +27,13 @@ class FileBase {
 public:
 	FileBase(char diskName) : diskName(diskName) {}
 
-	bool getPath(DWORDLONG, std::wstring&) const;
+	Result getPath(DWORDLONG, std::wstring&) const;
 
-	bool save(std::wstring&) const;
+	Result save(std::wstring&) const;
 
 	void add_file(const std::wstring&, DWORDLONG, DWORDLONG);
 
-	bool search_by_name(const std::wstring&, std::vector<std::wstring>&, bool need_clear_res = true) const;
+	Result search_by_name(const std::wstring&, std::vector<std::wstring>&, bool need_clear_res = true) const;
 
 	void count_files() const {
 		std::wcout << L"total files in volume " << diskName << L": " << this->refmap.size() << std::endl;
@@ -55,16 +58,15 @@ public:
 		std::wcout << max_arg << L" maximum counts: " << max_cnt << std::endl;*/
 	}
 
-	bool preprocess();
+	Result preprocess();
 
-	bool getAllFiles(DWORDLONG, std::vector<DWORDLONG>&, bool no_directory = true) const;
+	Result getAllFiles(DWORDLONG, std::vector<DWORDLONG>&, bool no_directory = true) const;
 
-	bool makeIndex();
+	Result makeIndex();
 
-	bool getReference(const std::wstring&, DWORDLONG&) const;
+	Result getReference(const std::wstring&, DWORDLONG&) const;
 
 private:
-	bool removeFiles(DWORDLONG);
 	bool splitPath(const std::wstring&, std::vector<std::wstring>&) const;
 	void DFS(DWORDLONG, bool, const std::vector<DWORDLONG>&,
 		std::unordered_map<DWORDLONG, DWORDLONG>*,
@@ -80,3 +82,4 @@ private:
 	std::unordered_multimap<WCHAR, DWORDLONG> index;
 };
 
+} // namespace Nothing

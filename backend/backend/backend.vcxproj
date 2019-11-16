@@ -138,6 +138,7 @@
     <ClInclude Include="FileContent.h" />
     <ClInclude Include="GeneralManager.h" />
     <ClInclude Include="FileBase.h" />
+    <ClInclude Include="utils.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

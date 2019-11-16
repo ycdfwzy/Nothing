@@ -1,4 +1,5 @@
 #pragma once
+#include "utils.h"
 #include "FileBase.h"
 #include "DiskController.h"
 #include "FileContent.h"
@@ -8,18 +9,20 @@
 #include <cstring>
 #include <algorithm>
 
+namespace Nothing {
+
 class GeneralManager
 {
 public:
 	static GeneralManager* getInstance();
 
-	bool addDisk(char diskName);
+	Result addDisk(char diskName);
 
-	bool save(char diskName = 0) const;
+	Result save(char diskName = 0) const;
 
-	bool search_name(const std::wstring&, std::vector<std::wstring>&, CHAR diskName = 0) const;
+	Result search_name(const std::wstring&, std::vector<std::wstring>&, CHAR diskName = 0) const;
 
-	bool search_content(const std::wstring&, const std::wstring&, std::vector<std::wstring>&);
+	Result search_content(const std::wstring&, const std::wstring&, std::vector<std::wstring>&);
 
 private:
 	GeneralManager() : contentSearch(nullptr) {}
@@ -32,3 +35,4 @@ private:
 	FileContent* contentSearch;
 };
 
+} // namespace Nothing

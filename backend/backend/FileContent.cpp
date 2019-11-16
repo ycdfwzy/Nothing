@@ -2,17 +2,18 @@
 #include <fstream>
 
 using namespace std;
+using namespace Nothing;
 
-bool FileContent::next(const wstring& keyword,
+Result FileContent::next(const wstring& keyword,
 					   int& cnt, std::wstring& path) {
-	if (this->empty()) return false;
+	if (this->empty()) return Result::FILEPOOL_EMPTY;
 
 	path = files.back();
 	files.pop_back();
 	// open file
 	wifstream fin(path);
 	if (!fin.is_open())
-		return false;
+		return Result::CANNOT_OPEN_FILE;
 	locale loc("zh_CN.UTF-8");
 	fin.imbue(loc);
 	// get all lines
@@ -28,5 +29,5 @@ bool FileContent::next(const wstring& keyword,
 		}
 	}
 	fin.close();
-	return true;
+	return Result::SUCCESS;
 }

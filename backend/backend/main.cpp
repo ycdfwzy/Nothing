@@ -12,6 +12,7 @@
 #include "GeneralManager.h"
 
 using namespace std;
+using namespace Nothing;
 
 char diskName = 'E';
 wstring path(L"E:\\大四上\\云数据管理(2)\\智能数据分析\\智能数据分析大作业");
@@ -25,7 +26,7 @@ int main() {
 	//wcout << s << endl;
 	GeneralManager* manager = GeneralManager::getInstance();
 	clock_t start = clock();
-	if (manager->addDisk(diskName)) {
+	if (manager->addDisk(diskName) == Result::SUCCESS) {
 		wcout << L"OK" << endl;
 	}
 	clock_t end = clock();
@@ -38,7 +39,8 @@ int main() {
 		vector<wstring> res;
 		res.clear();
 		start = clock();
-		if (manager->search_content(wstring(keyword), L"E:\\", res)) {
+		if (manager->search_content(wstring(keyword), L"E:\\", res)
+				== Result::SUCCESS) {
 			wcout << "result: " << res.size() << endl;
 			/*for (const wstring& s : res) {
 				wcout << s << endl;

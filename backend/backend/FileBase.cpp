@@ -4,10 +4,11 @@
 #include <stack>
 
 using namespace std;
+using namespace Nothing;
 
-bool FileBase::getPath(DWORDLONG ref, std::wstring& res) const {
+Result FileBase::getPath(DWORDLONG ref, std::wstring& res) const {
 	if (refmap.find(ref) == refmap.end()) {
-		return false;
+		return Result::REFERENCE_NOT_FOIUND;
 	}
 	res = refmap.at(ref).name;
 	ref = refmap.at(ref).parent;
@@ -19,13 +20,13 @@ bool FileBase::getPath(DWORDLONG ref, std::wstring& res) const {
 		res = L"X:\\" + res;
 		res[0] = diskName;
 	}
-	return true;
+	return Result::SUCCESS;
 }
 
-bool FileBase::save(std::wstring& path) const {
+Result FileBase::save(std::wstring& path) const {
 	wofstream fout(path);
 	if (!fout.is_open()) {
-		return false;
+		return Result::CANNOT_OPEN_FILE;
 	}
 	locale loc("zh_CN.UTF-8");
 	fout.imbue(loc);
@@ -33,7 +34,7 @@ bool FileBase::save(std::wstring& path) const {
 		fout << p.second.name << L" " << to_wstring(p.first) << L" " << to_wstring(p.second.parent) << endl;
 	}
 	fout.close();
-	return true;
+	return Result::SUCCESS;
 }
 
 void FileBase::add_file(const wstring& filename,
@@ -50,11 +51,11 @@ void FileBase::add_file(const wstring& filename,
 	}*/
 }
 
-bool FileBase::search_by_name(const std::wstring& keyword,
+Result FileBase::search_by_name(const std::wstring& keyword,
 							  std::vector<std::wstring>& res,
 							  bool need_clear_res) const {
 	if (keyword.empty()) {
-		return false;
+		return Result::KEYWORD_EMPTY;
 	}
 	if (need_clear_res) {
 		res.clear();
@@ -65,14 +66,14 @@ bool FileBase::search_by_name(const std::wstring& keyword,
 		wstring filename = refmap.at(ref).name;
 		if (filename.find(keyword) != filename.npos) {
 			wstring new_res;
-			if (this->getPath(ref, new_res))
+			if (this->getPath(ref, new_res) == Result::SUCCESS)
 				res.emplace_back(new_res);
 		}
 	}
-	return true;
+	return Result::SUCCESS;
 }
 
-bool FileBase::preprocess() {
+Result FileBase::preprocess() {
 	// $RmMetadata
 	// System Volume Information
 	vector<DWORDLONG> to_delete;
@@ -138,14 +139,14 @@ bool FileBase::preprocess() {
 
 	this->makeIndex();
 
-	return true;
+	return Result::SUCCESS;
 }
 
-bool FileBase::getAllFiles(DWORDLONG root,
+Result FileBase::getAllFiles(DWORDLONG root,
 						   vector<DWORDLONG>& res,
 						   bool no_directory) const {
 	if (this->interval.find(root) == this->interval.end())
-		return false;
+		return Result::REFERENCE_NOT_FOIUND;
 	INTERVAL itv = this->interval.at(root);
 	if (!no_directory) {
 		res.assign(this->DFSseq.begin() + itv.first,
@@ -163,10 +164,10 @@ bool FileBase::getAllFiles(DWORDLONG root,
 		}
 	}
 	
-	return true;
+	return Result::SUCCESS;
 }
 
-bool FileBase::makeIndex() {
+Result FileBase::makeIndex() {
 	unordered_set<WCHAR> v;
 	for (const auto& p : refmap) {
 		v.clear();
@@ -177,14 +178,14 @@ bool FileBase::makeIndex() {
 			this->index.insert(make_pair(c, p.first));
 		}
 	}
-	return true;
+	return Result::SUCCESS;
 }
 
-bool FileBase::getReference(const std::wstring& path,
+Result FileBase::getReference(const std::wstring& path,
 							DWORDLONG& ref) const {
 	vector<wstring> splited_path;
 	if (!this->splitPath(path, splited_path))
-		return false;
+		return Result::PATH_INVALID;
 
 	INTERVAL itv = make_pair(0, this->DFSseq.size());
 	for (const wstring& filename : splited_path) {
@@ -201,22 +202,10 @@ bool FileBase::getReference(const std::wstring& path,
 			idx = interval.at(ref_).second;
 		}
 		if (idx >= itv.second)
-			return false;
+			return Result::PATH_INVALID;
 	}
 
-	return true;
-}
-
-bool FileBase::removeFiles(DWORDLONG root) {
-	if (this->interval.find(root) == this->interval.end())
-		return false;
-	INTERVAL itv = this->interval.at(root);
-	for (int i = itv.first; i < itv.second; i++) {
-		DWORDLONG ref = this->DFSseq.at(i);
-		refmap.erase(ref);
-		interval.erase(ref);
-	}
-	return true;
+	return Result::SUCCESS;
 }
 
 bool FileBase::splitPath(const std::wstring& path,

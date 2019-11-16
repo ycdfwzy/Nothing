@@ -7,22 +7,30 @@
 #include <tchar.h>
 
 using namespace std;
+using namespace Nothing;
 
 DiskController::DiskController(char diskName) {
 	this->diskName = diskName;
 }
 
-bool DiskController::loadFilenames(FileBase* filebase) {
-	if (createHandle() &&
-		createUSNJournal() &&
-		queryUSNJournal() &&
-		getUSNJournalInfo(filebase) &&
-		deleteUSNJournal())
-		return true;
-	return false;
+Result DiskController::loadFilenames(FileBase* filebase) {
+	Result r = createHandle();
+	if (r != Result::SUCCESS)
+		return r;
+	r = createUSNJournal();
+	if (r != Result::SUCCESS)
+		return r;
+	r = queryUSNJournal();
+	if (r != Result::SUCCESS)
+		return r;
+	r = getUSNJournalInfo(filebase);
+	if (r != Result::SUCCESS)
+		return r;
+	r = deleteUSNJournal();
+	return r;
 }
 
-bool DiskController::createHandle() {
+Result DiskController::createHandle() {
 	string filename = "\\\\.\\";
 	filename.push_back(this->diskName);
 	filename.push_back(':');
@@ -37,12 +45,12 @@ bool DiskController::createHandle() {
 		wcerr << L"create file failed!" << endl;
 		DWORD err = GetLastError();
 		wcerr << L"error code: " << err << endl;
-		return false;
+		return Result::CREATEHANDLE_FAILED;
 	}
-	return true;
+	return Result::SUCCESS;
 }
 
-bool DiskController::createUSNJournal() {
+Result DiskController::createUSNJournal() {
 	DWORD br;
 	this->cujd.AllocationDelta = 0;
 	this->cujd.MaximumSize = 0;
@@ -54,12 +62,12 @@ bool DiskController::createUSNJournal() {
 		wcerr << L"create usn failed!" << endl;
 		DWORD err = GetLastError();
 		wcerr << L"error code: " << err << endl;
-		return false;
+		return Result::CREATEUSNJOURNAL_FAILED;
 	}
-	return true;
+	return Result::SUCCESS;
 }
 
-bool DiskController::queryUSNJournal() {
+Result DiskController::queryUSNJournal() {
 	DWORD br;
 	if (!DeviceIoControl(this->hDsk,
 						FSCTL_QUERY_USN_JOURNAL,
@@ -70,16 +78,16 @@ bool DiskController::queryUSNJournal() {
 		wcerr << L"get usn info failed!" << endl;
 		DWORD err = GetLastError();
 		wcerr << L"error code: " << err << endl;
-		return false;
+		return Result::QUERYUSNJOURNAL_FAILED;
 	}
 	// wcout << ujd.MaxUsn << endl;
-	return true;
+	return Result::SUCCESS;
 }
 
 constexpr auto BUFFER_LEN = 1 << 12;
 CHAR buffer[BUFFER_LEN];
 
-bool DiskController::getUSNJournalInfo(FileBase* filebase) {
+Result DiskController::getUSNJournalInfo(FileBase* filebase) {
 	MFT_ENUM_DATA_V0 med;
 	med.StartFileReferenceNumber = 0;
 	med.LowUsn = this->ujd.FirstUsn;
@@ -118,10 +126,10 @@ bool DiskController::getUSNJournalInfo(FileBase* filebase) {
 		memset(buffer, 0, sizeof(CHAR) * BUFFER_LEN);
 	}
 
-	return true;
+	return Result::SUCCESS;
 }
 
-bool DiskController::deleteUSNJournal() {
+Result DiskController::deleteUSNJournal() {
 	DWORD br;
 	this->dujd.UsnJournalID = this->ujd.UsnJournalID;
 	this->dujd.DeleteFlags = USN_DELETE_FLAG_DELETE;
@@ -134,8 +142,8 @@ bool DiskController::deleteUSNJournal() {
 		DWORD err = GetLastError();
 		wcerr << L"error code: " << err << endl;
 		CloseHandle(this->hDsk);
-		return false;
+		return Result::DELETEUSNJOURNAL_FAILED;
 	}
 	CloseHandle(this->hDsk);
-	return true;
+	return Result::SUCCESS;
 }

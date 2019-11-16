@@ -5,10 +5,11 @@
 #include <comdef.h>
 
 using namespace std;
+using namespace Nothing;
 
 GeneralManager* GeneralManager::singleton = nullptr;
 
-bool checkNTFS(const string& diskName) {
+Result checkNTFS(const string& diskName) {
 	TCHAR volumeName[MAX_PATH + 1] = { 0 };
 	TCHAR fileSystemName[MAX_PATH + 1] = { 0 };
 	DWORD serialNumber = 0;
@@ -22,9 +23,11 @@ bool checkNTFS(const string& diskName) {
 		&maxComponentLen,
 		&fileSystemFlags,
 		fileSystemName,
-		ARRAYSIZE(fileSystemName)))
-		return _tcscmp(fileSystemName, _T("NTFS")) == 0;
-	return false;
+		ARRAYSIZE(fileSystemName))) {
+		return _tcscmp(fileSystemName, _T("NTFS")) == 0 ?
+			Result::SUCCESS : Result::NOT_NTFS;
+	}
+	return Result::GETVOLUMEINFORMATION_FALIED;
 }
 
 GeneralManager* GeneralManager::getInstance() {
@@ -34,19 +37,20 @@ GeneralManager* GeneralManager::getInstance() {
 	return singleton;
 }
 
-bool GeneralManager::addDisk(char diskName) {
+Result GeneralManager::addDisk(char diskName) {
 	if (disk_base.find(diskName) != disk_base.end()) {
-		return false;
+		return Result::NO_DISK;
 	}
 	string volume = "@:\\";
 	volume[0] = diskName;
-	if (!checkNTFS(volume)) {
-		return false;
+	Result r = checkNTFS(volume);
+	if (r != Result::SUCCESS) {
+		return r;
 	}
 	disk_base[diskName] = new DiskController(diskName);
 	file_base[diskName] = new FileBase(diskName);
-	bool flag = disk_base[diskName]->loadFilenames(file_base[diskName]);
-	if (!flag) {
+	r = disk_base[diskName]->loadFilenames(file_base[diskName]);
+	if (r != Result::SUCCESS) {
 		disk_base.erase(diskName);
 		file_base.erase(diskName);
 	}
@@ -54,71 +58,81 @@ bool GeneralManager::addDisk(char diskName) {
 		file_base[diskName]->count_files();
 		file_base[diskName]->preprocess();
 	}
-	return flag;
+	return r;
 }
 
-bool GeneralManager::save(char diskName) const {
+Result GeneralManager::save(char diskName) const {
 	wstring path = L"D:\\x_Allfiles.txt";
 	if (diskName == 0) {
-		bool flag = true;
+		Result r = Result::SUCCESS;
 		for (const auto& p : file_base) {
 			path[3] = p.first;
-			if (!p.second->save(path))
-				flag = false;
+			r = p.second->save(path);
 		}
-		return flag;
+		return r;
 	}
 	if (file_base.find(diskName) == file_base.end())
-		return false;
+		return Result::NO_DISK;
 	path[3] = diskName;
 	return file_base.at(diskName)->save(path);
 }
 
-bool GeneralManager::search_name(const wstring& keyword,
+Result GeneralManager::search_name(const wstring& keyword,
 							vector<wstring>& res,
 							CHAR diskName) const {
 	if (diskName == 0) {
 		res.clear();
-		bool flag = true;
+		Result r = Result::SUCCESS;
 		for (const auto& p : file_base) {
-			if (!p.second->search_by_name(keyword, res, false))
-				flag = false;
+			r = p.second->search_by_name(keyword, res, false);
 		}
-		return flag;
+		return r;
 	}
 	if (file_base.find(diskName) == file_base.end())
-		return false;
+		return Result::NO_DISK;
 
 	return file_base.at(diskName)->search_by_name(keyword, res);
 }
 
-bool GeneralManager::search_content(const wstring& keyword,
-							const wstring& path,
-							vector<wstring>& res) {
+Result GeneralManager::search_content(const wstring& keyword,
+									const wstring& path,
+									vector<wstring>& res) {
 	// precheck
 	if (path.empty()) {
-		
+		res.clear();
+		for (const auto& p : file_base) {
+			wstring path_ = L"X:";
+			vector<wstring> res_;
+			path_[0] = p.first;
+			if (search_content(keyword, path_, res_) == Result::SUCCESS) {
+				res.insert(res.end(), res_.begin(), res_.end());
+			}
+		}
+		return Result::SUCCESS;
 	}
 	CHAR diskName = path[0];
 	if (path[0] > L'z' || file_base.find(diskName) == file_base.end()) {
-		return false;
+		return Result::NO_PATH;
 	}
 
 	contentSearch = new FileContent();	
 	FileBase* fb = file_base.at(diskName);
+	Result r = Result::SUCCESS;
 
 	// get path reference
 	DWORDLONG pathRef;
-	if (!fb->getReference(path, pathRef)) {
-		return false;
+	r = fb->getReference(path, pathRef);
+	if (r != Result::SUCCESS) {
+		return r;
 	}
 
 	vector<DWORDLONG> allFiles;
-	if (!fb->getAllFiles(pathRef, allFiles))
-		return false;
+	r = fb->getAllFiles(pathRef, allFiles);
+	if (r != Result::SUCCESS)
+		return r;
 	for (DWORDLONG fileRef : allFiles) {
 		wstring path;
-		if (fb->getPath(fileRef, path)) {
+		if (fb->getPath(fileRef, path) == Result::SUCCESS) {
 			contentSearch->add_file(path);
 		}
 	}
@@ -126,8 +140,8 @@ bool GeneralManager::search_content(const wstring& keyword,
 	int cnt = 0;
 	wstring curpath;
 	res.clear();
-	while (!contentSearch->empty()) {
-		if (contentSearch->next(keyword, cnt, curpath) && cnt > 0) {
+	while (contentSearch->next(keyword, cnt, curpath) != Result::FILEPOOL_EMPTY) {
+		if (cnt > 0) {
 			wcout << cnt << L" times in " << curpath << endl;
 			res.push_back(curpath);
 		}
@@ -135,5 +149,5 @@ bool GeneralManager::search_content(const wstring& keyword,
 	
 	delete contentSearch;
 	contentSearch = nullptr;
-	return true;
+	return Result::SUCCESS;
 }
