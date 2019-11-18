@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <codecvt>
 
 namespace Nothing {
 
@@ -23,7 +25,39 @@ enum class Result {
 	GETUSNJOURNALINFO_FAILED,
 	DELETEUSNJOURNAL_FAILED,
 	/*-----------------------*/
-	FILEPOOL_EMPTY
+	FILEPOOL_EMPTY,
+	PDF_READ_FAILED
+};
+
+std::wstring string2wstring(const std::string& str);
+std::string wstring2string(const std::wstring& wstr);
+
+bool endsWith(const std::string& str, const std::string& suffix);
+bool startsWith(const std::string& str, const std::string& prefix);
+bool endsWith(const std::wstring& wstr, const std::wstring& suffix);
+bool startsWith(const std::wstring& wstr, const std::wstring& prefix);
+
+bool isPDF(const std::wstring& wstr);
+bool isText(const std::wstring& wstr);
+bool isWord(const std::wstring& wstr);
+bool isExcel(const std::wstring& wstr);
+bool isPowerPoint(const std::wstring& wstr);
+
+class PDFReader {
+public:
+	static PDFReader* getInstance();
+	bool setPath(const std::wstring& path) { this->path = path; return true; }
+	Result getContent(std::wstring&) const;
+
+	~PDFReader();
+
+private:
+	PDFReader();
+	
+
+	static PDFReader* singleton;
+
+	std::wstring path;
 };
 
 } // namespace Nothing

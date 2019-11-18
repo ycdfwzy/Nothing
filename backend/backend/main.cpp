@@ -1,4 +1,3 @@
-// #include <winioctl.h>
 #include <Windows.h>
 
 #include <string>
@@ -21,9 +20,6 @@ int main() {
 	locale loc("chs");
 	wcin.imbue(loc);
 	wcout.imbue(loc);
-	//wstring s;
-	//getline(wcin, s);
-	//wcout << s << endl;
 	GeneralManager* manager = GeneralManager::getInstance();
 	clock_t start = clock();
 	if (manager->addDisk(diskName) == Result::SUCCESS) {
@@ -50,7 +46,6 @@ int main() {
 		wcout << (double)(end - start) / CLOCKS_PER_SEC << endl;
 	}
 
-	// 281474976715340
 	return 0;
 }
 

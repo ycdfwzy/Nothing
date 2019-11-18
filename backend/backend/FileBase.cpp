@@ -83,7 +83,8 @@ Result FileBase::preprocess() {
 	unordered_set<DWORDLONG> to_insert;
 	to_insert.clear();
 	for (const auto& p : refmap) {
-		if (p.second.name == L"$RmMetadata" ||
+		if (p.second.name == L"__MACOSX" ||
+			p.second.name == L"$RmMetadata" ||
 			p.second.name == L"System Volume Information") {
 			to_delete.push_back(p.first);
 		}
