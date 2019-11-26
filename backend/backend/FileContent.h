@@ -1,5 +1,6 @@
 #pragma once
 #include "utils.h"
+#include "SearchResult.h"
 #include <Windows.h>
 #include <string>
 #include <cstring>
@@ -12,16 +13,16 @@ class FileContent {
 public:
 	FileContent() {}
 
-	Result add_file(const std::wstring& path) {
-		files.push_back(path);
+	Result add_file(DWORDLONG ref, const std::wstring& path) {
+		files.emplace_back(ref, path);
 		return Result::SUCCESS;
 	}
 
 	bool empty() const { return files.empty(); }
-	Result next(const std::wstring&, int&, std::wstring&);
+	Result next(const std::wstring&, SearchResult&);
 
 private:
-	std::vector<std::wstring> files;
+	std::vector<std::pair<DWORDLONG, std::wstring>> files;
 };
 
 } // namespace Nothing

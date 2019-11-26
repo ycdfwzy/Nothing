@@ -51,8 +51,8 @@ void FileBase::add_file(const wstring& filename,
 	}*/
 }
 
-Result FileBase::search_by_name(const std::wstring& keyword,
-							  std::vector<std::wstring>& res,
+Result FileBase::search_by_name(const wstring& keyword,
+							  vector<SearchResult>& res,
 							  bool need_clear_res) const {
 	if (keyword.empty()) {
 		return Result::KEYWORD_EMPTY;
@@ -65,9 +65,10 @@ Result FileBase::search_by_name(const std::wstring& keyword,
 		DWORDLONG ref = (*I).second;
 		wstring filename = refmap.at(ref).name;
 		if (filename.find(keyword) != filename.npos) {
-			wstring new_res;
-			if (this->getPath(ref, new_res) == Result::SUCCESS)
-				res.emplace_back(new_res);
+			wstring path;
+			if (this->getPath(ref, path) == Result::SUCCESS) {
+				res.emplace_back(ref, filename, path, keyword);
+			}
 		}
 	}
 	return Result::SUCCESS;

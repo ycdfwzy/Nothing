@@ -8,6 +8,7 @@
 #include <ctime>
 #include <unordered_map>
 #include <vector>
+#include "SearchResult.h"
 #include "GeneralManager.h"
 
 using namespace std;
@@ -32,7 +33,7 @@ int main() {
 		wcout << L"Please input keyword:" << endl;
 		WCHAR keyword[256];
 		wcin.getline(keyword, 256, L'\n');
-		vector<wstring> res;
+		vector<SearchResult> res;
 		res.clear();
 		start = clock();
 		if (manager->search_content(wstring(keyword), L"E:\\", res)

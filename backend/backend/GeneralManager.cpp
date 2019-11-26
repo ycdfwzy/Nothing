@@ -78,7 +78,7 @@ Result GeneralManager::save(char diskName) const {
 }
 
 Result GeneralManager::search_name(const wstring& keyword,
-							vector<wstring>& res,
+							vector<SearchResult>& res,
 							CHAR diskName) const {
 	if (diskName == 0) {
 		res.clear();
@@ -96,13 +96,13 @@ Result GeneralManager::search_name(const wstring& keyword,
 
 Result GeneralManager::search_content(const wstring& keyword,
 									const wstring& path,
-									vector<wstring>& res) {
+									vector<SearchResult>& res) {
 	// precheck
 	if (path.empty()) {
 		res.clear();
 		for (const auto& p : file_base) {
 			wstring path_ = L"X:";
-			vector<wstring> res_;
+			vector<SearchResult> res_;
 			path_[0] = p.first;
 			if (search_content(keyword, path_, res_) == Result::SUCCESS) {
 				res.insert(res.end(), res_.begin(), res_.end());
@@ -123,27 +123,34 @@ Result GeneralManager::search_content(const wstring& keyword,
 	DWORDLONG pathRef;
 	r = fb->getReference(path, pathRef);
 	if (r != Result::SUCCESS) {
+		delete contentSearch;
+		contentSearch = nullptr;
 		return r;
 	}
 
 	vector<DWORDLONG> allFiles;
 	r = fb->getAllFiles(pathRef, allFiles);
-	if (r != Result::SUCCESS)
+	if (r != Result::SUCCESS) {
+		delete contentSearch;
+		contentSearch = nullptr;
 		return r;
+	}
 	for (DWORDLONG fileRef : allFiles) {
 		wstring path;
 		if (fb->getPath(fileRef, path) == Result::SUCCESS) {
-			contentSearch->add_file(path);
+			contentSearch->add_file(fileRef, path);
 		}
 	}
 
-	int cnt = 0;
-	wstring curpath;
+	/*int cnt = 0;
+	wstring curpath;*/
 	res.clear();
-	while (contentSearch->next(keyword, cnt, curpath) != Result::FILEPOOL_EMPTY) {
-		if (cnt > 0) {
-			wcout << cnt << L" times in " << curpath << endl;
-			res.push_back(curpath);
+	SearchResult tmp_result;
+	while (contentSearch->next(keyword, tmp_result) != Result::FILEPOOL_EMPTY) {
+		if (tmp_result.get_content_results().size() > 0) {
+			wcout << tmp_result.get_content_results().size() << L" times in " << tmp_result.get_path() << endl;
+			res.push_back(tmp_result);
+			tmp_result = SearchResult();
 		}
 	}
 	

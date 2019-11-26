@@ -3,6 +3,7 @@
 #include "FileBase.h"
 #include "DiskController.h"
 #include "FileContent.h"
+#include "SearchResult.h"
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -20,9 +21,9 @@ public:
 
 	Result save(char diskName = 0) const;
 
-	Result search_name(const std::wstring&, std::vector<std::wstring>&, CHAR diskName = 0) const;
+	Result search_name(const std::wstring&, std::vector<SearchResult>&, CHAR diskName = 0) const;
 
-	Result search_content(const std::wstring&, const std::wstring&, std::vector<std::wstring>&);
+	Result search_content(const std::wstring&, const std::wstring&, std::vector<SearchResult>&);
 
 private:
 	GeneralManager() : contentSearch(nullptr) {}
