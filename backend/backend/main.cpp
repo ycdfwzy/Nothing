@@ -36,12 +36,16 @@ int main() {
 		vector<SearchResult> res;
 		res.clear();
 		start = clock();
-		if (manager->search_content(wstring(keyword), L"E:\\", res)
+		/*if (manager->search_content(wstring(keyword), L"E:\\", res)
 				== Result::SUCCESS) {
 			wcout << "result: " << res.size() << endl;
-			/*for (const wstring& s : res) {
-				wcout << s << endl;
-			}*/
+		}*/
+		if (manager->search_name(wstring(keyword), res, diskName)
+				== Result::SUCCESS) {
+			for (auto& p : res) {
+				wcout << p.get_path() << endl;
+			}
+			wcout << "result: " << res.size() << endl;
 		}
 		end = clock();
 		wcout << (double)(end - start) / CLOCKS_PER_SEC << endl;
@@ -49,4 +53,3 @@ int main() {
 
 	return 0;
 }
-

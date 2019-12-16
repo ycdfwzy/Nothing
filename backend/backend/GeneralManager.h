@@ -17,6 +17,8 @@ class GeneralManager
 public:
 	static GeneralManager* getInstance();
 
+	~GeneralManager();
+
 	Result addDisk(char diskName);
 
 	Result save(char diskName = 0) const;

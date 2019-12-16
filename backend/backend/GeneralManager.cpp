@@ -37,6 +37,15 @@ GeneralManager* GeneralManager::getInstance() {
 	return singleton;
 }
 
+GeneralManager::~GeneralManager() {
+	for (auto p: disk_base)
+		delete p.second;
+	for (auto p: file_base)
+		delete p.second;
+	disk_base.clear();
+	file_base.clear();
+}
+
 Result GeneralManager::addDisk(char diskName) {
 	if (disk_base.find(diskName) != disk_base.end()) {
 		return Result::NO_DISK;
@@ -55,6 +64,7 @@ Result GeneralManager::addDisk(char diskName) {
 		file_base.erase(diskName);
 	}
 	else {
+		disk_base[diskName]->startWatching(file_base[diskName]);
 		file_base[diskName]->count_files();
 		file_base[diskName]->preprocess();
 	}
@@ -156,5 +166,7 @@ Result GeneralManager::search_content(const wstring& keyword,
 	
 	delete contentSearch;
 	contentSearch = nullptr;
+
+	// disk_base[diskName]->loadFilenames(fb);
 	return Result::SUCCESS;
 }
