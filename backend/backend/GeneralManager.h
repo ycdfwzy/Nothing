@@ -23,9 +23,13 @@ public:
 
 	Result save(char diskName = 0) const;
 
+	Result search(std::vector<SearchResult>&, const std::wstring& keyword = L"", const std::wstring& content = L"",const std::wstring& path = L"");
+
 	Result search_name(const std::wstring&, std::vector<SearchResult>&, CHAR diskName = 0) const;
 
 	Result search_content(const std::wstring&, const std::wstring&, std::vector<SearchResult>&);
+
+	FileContent* getContentSearch() const { return contentSearch; }
 
 private:
 	GeneralManager() : contentSearch(nullptr) {}

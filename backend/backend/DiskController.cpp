@@ -30,17 +30,17 @@ void showLastError() {
 }
 
 unsigned WINAPI spy(void* param) {
-	auto t = (pair<DiskController*, FileBase*>*) param;
-	t->first->WatchChanges(t->second);
+	((DiskController*)param)->WatchChanges();
 	return 0;
 }
 
-DiskController::DiskController(char diskName) : diskName(diskName) {
+DiskController::DiskController(char diskName, FileBase* fb) : 
+	diskName(diskName), fb(fb) {
 	this->isWatching = false;
 	this->last_usn = 0;
 }
 
-Result DiskController::loadFilenames(FileBase* filebase) {
+Result DiskController::loadFilenames() {
 	Result r = createHandle();
 	if (r != Result::SUCCESS)
 		return r;
@@ -50,14 +50,14 @@ Result DiskController::loadFilenames(FileBase* filebase) {
 	r = queryUSNJournal();
 	if (r != Result::SUCCESS)
 		return r;
-	r = getUSNJournalInfo(filebase);
+	r = getUSNJournalInfo();
 	if (r != Result::SUCCESS)
 		return r;
 	// r = deleteUSNJournal();
 	return r;
 }
 
-void DiskController::WatchChanges(FileBase* filebase) {
+void DiskController::WatchChanges() {
 	wcout << "WatchChanges" << endl;
 
 	// wait for changes query
@@ -83,7 +83,7 @@ void DiskController::WatchChanges(FileBase* filebase) {
 			return;
 		}
 
-		res = ReadChanges(query->StartUsn, filebase);
+		res = ReadChanges(query->StartUsn);
 		query->StartUsn = this->last_usn;
 		// break;
 	}
@@ -91,16 +91,15 @@ void DiskController::WatchChanges(FileBase* filebase) {
 	delete query;
 }
 
-void DiskController::startWatching(FileBase* filebase) {
+void DiskController::startWatching() {
 	isWatching = true;
 	UINT threadId;
-	auto param = make_pair(this, filebase);
-	hThread = (HANDLE)_beginthreadex(NULL, 0, &spy, &param, 0, &threadId);
+	hThread = (HANDLE)_beginthreadex(NULL, 0, &spy, (void*)this, 0, &threadId);
 }
 
 constexpr auto BUFFER_LEN = 1 << 12;
 CHAR buffer[BUFFER_LEN];
-Result DiskController::ReadChanges(USN low_usn, FileBase* filebase) {
+Result DiskController::ReadChanges(USN low_usn) {
 	DWORD br;
 	memset(buffer, 0, sizeof(CHAR) * BUFFER_LEN);
 	if (ReadJournalForChanges(low_usn, &br) != Result::SUCCESS) {
@@ -122,21 +121,21 @@ Result DiskController::ReadChanges(USN low_usn, FileBase* filebase) {
 		// some system files will create and delete very soon
 		if ((reason & USN_REASON_FILE_CREATE) && (reason & USN_REASON_FILE_DELETE)) {
 			// wcout << "system file created & deleted: ";
-			filebase->delete_file_watching(pusn_record->FileReferenceNumber);
+			fb->delete_file_watching(pusn_record->FileReferenceNumber);
 		} else
 		if ((reason & USN_REASON_FILE_CREATE) && (reason & USN_REASON_CLOSE)) {
 			// wcout << "file created: ";
-			filebase->add_file_watching(filename, pusn_record->FileReferenceNumber,
-										pusn_record->ParentFileReferenceNumber);
+			fb->add_file_watching(filename, pusn_record->FileReferenceNumber,
+								  pusn_record->ParentFileReferenceNumber);
 		} else
 		if ((reason & USN_REASON_FILE_DELETE) && (reason & USN_REASON_CLOSE)) {
 			// wcout << "file deleted: ";
-			filebase->delete_file_watching(pusn_record->FileReferenceNumber);
+			fb->delete_file_watching(pusn_record->FileReferenceNumber);
 		} else
 		if (reason & FILECHANGE_MASK) {
 			// wcout << "file changed: ";
-			filebase->change_file_watching(filename, pusn_record->FileReferenceNumber,
-											pusn_record->ParentFileReferenceNumber);
+			fb->change_file_watching(filename, pusn_record->FileReferenceNumber,
+									 pusn_record->ParentFileReferenceNumber);
 		}
 		// wcout << filename << endl;
 
@@ -201,7 +200,7 @@ Result DiskController::queryUSNJournal() {
 	return Result::SUCCESS;
 }
 
-Result DiskController::getUSNJournalInfo(FileBase* filebase) {
+Result DiskController::getUSNJournalInfo() {
 	MFT_ENUM_DATA_V0 med;
 	med.StartFileReferenceNumber = 0;
 	med.LowUsn = this->ujd.FirstUsn;
@@ -227,9 +226,9 @@ Result DiskController::getUSNJournalInfo(FileBase* filebase) {
 				filename[k] = pusn_record->FileName[k];
 			filename[pusn_record->FileNameLength / 2] = L'\0';
 			// wcout << filename << endl;
-			filebase->add_file(filename,
-								pusn_record->FileReferenceNumber,
-								pusn_record->ParentFileReferenceNumber);
+			fb->add_file(filename,
+						 pusn_record->FileReferenceNumber,
+						 pusn_record->ParentFileReferenceNumber);
 			delete[] filename;
 
 			// next record

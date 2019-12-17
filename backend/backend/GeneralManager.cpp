@@ -56,15 +56,16 @@ Result GeneralManager::addDisk(char diskName) {
 	if (r != Result::SUCCESS) {
 		return r;
 	}
-	disk_base[diskName] = new DiskController(diskName);
+	
 	file_base[diskName] = new FileBase(diskName);
-	r = disk_base[diskName]->loadFilenames(file_base[diskName]);
+	disk_base[diskName] = new DiskController(diskName, file_base[diskName]);
+	r = disk_base[diskName]->loadFilenames();
 	if (r != Result::SUCCESS) {
 		disk_base.erase(diskName);
 		file_base.erase(diskName);
 	}
 	else {
-		disk_base[diskName]->startWatching(file_base[diskName]);
+		disk_base[diskName]->startWatching();
 		file_base[diskName]->count_files();
 		file_base[diskName]->preprocess();
 	}
@@ -85,6 +86,47 @@ Result GeneralManager::save(char diskName) const {
 		return Result::NO_DISK;
 	path[3] = diskName;
 	return file_base.at(diskName)->save(path);
+}
+
+Result GeneralManager::search(vector<SearchResult>& res,
+							  const std::wstring& keyword,
+							  const std::wstring& content,
+							  const std::wstring& path) {
+	if (keyword == L"" && content == L"" && path == L"")
+		return Result::SUCCESS;
+
+	Result r = Result::SUCCESS;
+	res.clear();
+	if (path == L"") {
+		for (const auto& p : file_base) {
+			r = p.second->search_by_name(keyword, res, false);
+		}
+	}
+	else
+	{
+		char diskName = path[0];
+		if (file_base.find(diskName) == file_base.end())
+			return Result::NO_DISK;
+		DWORDLONG path_ref;
+		if (file_base.at(diskName)->getReference(path, path_ref)
+				== Result::SUCCESS)
+			file_base.at(diskName)->search_by_name(keyword, res, false, path_ref);
+		else
+			return Result::PATH_INVALID;
+	}
+
+	if (content != L"") {
+		if (contentSearch != nullptr) {
+			delete contentSearch;
+		}
+		contentSearch = new FileContent();
+		for (const auto& p : res) {
+			r = contentSearch->add_file(p.get_reference(), p.get_path());
+		}
+		res.clear();
+	}
+
+	return Result::SUCCESS;
 }
 
 Result GeneralManager::search_name(const wstring& keyword,

@@ -107,20 +107,45 @@ void FileBase::change_file_watching(const std::wstring& filename,
 
 Result FileBase::search_by_name(const wstring& keyword,
 							  vector<SearchResult>& res,
-							  bool need_clear_res) const {
+							  bool need_clear_res,
+							  DWORDLONG master_path) const {
 	if (keyword.empty()) {
+		if (master_path == 0) {
+			for (const auto& p : refmap) {
+				wstring tmp;
+				if (getPath(p.first, tmp) == Result::SUCCESS) {
+					res.emplace_back(p.first, p.second.name, tmp, keyword);
+				}
+			}
+		}
+		else {
+			vector<DWORDLONG> seq;
+			DFS(master_path, seq);
+			for (const auto& p : seq) {
+				wstring tmp;
+				if (getPath(p, tmp) == Result::SUCCESS) {
+					res.emplace_back(p, refmap.at(p).name, tmp, keyword);
+				}
+			}
+		}
 		return Result::KEYWORD_EMPTY;
 	}
 	if (need_clear_res) {
 		res.clear();
 	}
+
+	wstring master_path_s;
+	if (master_path != 0)
+		this->getPath(master_path, master_path_s);
+
 	auto p = index.equal_range(keyword.at(0));
 	for (auto I = p.first; I != p.second; I++) {
 		DWORDLONG ref = (*I).second;
 		wstring filename = refmap.at(ref).name;
 		if (filename.find(keyword) != filename.npos) {
 			wstring path;
-			if (this->getPath(ref, path) == Result::SUCCESS) {
+			if (this->getPath(ref, path) == Result::SUCCESS &&
+				(master_path == 0 || startsWith(path, master_path_s))) {
 				res.emplace_back(ref, filename, path, keyword);
 			}
 		}

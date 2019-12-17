@@ -39,7 +39,7 @@ public:
 	void delete_file_watching(DWORDLONG);
 	void change_file_watching(const std::wstring&, DWORDLONG, DWORDLONG);
 
-	Result search_by_name(const std::wstring&, std::vector<SearchResult>&, bool need_clear_res = true) const;
+	Result search_by_name(const std::wstring&, std::vector<SearchResult>&, bool need_clear_res = true, DWORDLONG path = 0) const;
 
 	void count_files() const {
 		std::wcout << L"total files in volume " << diskName << L": " << this->refmap.size() << std::endl;

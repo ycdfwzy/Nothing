@@ -30,22 +30,43 @@ int main() {
 	wcout << (double)(end - start) / CLOCKS_PER_SEC << endl;
 
 	while (true) {
+		// input keyword to search
 		wcout << L"Please input keyword:" << endl;
 		WCHAR keyword[256];
 		wcin.getline(keyword, 256, L'\n');
+
+		wcout << L"Please input content:" << endl;
+		WCHAR content[256];
+		wcin.getline(content, 256, L'\n');
+
+		wcout << L"Please input path:" << endl;
+		WCHAR path[MAX_PATH];
+		wcin.getline(path, MAX_PATH, L'\n');
+
 		vector<SearchResult> res;
 		res.clear();
+
 		start = clock();
-		/*if (manager->search_content(wstring(keyword), L"E:\\", res)
+		// search
+		if (manager->search(res, keyword, content, path)
 				== Result::SUCCESS) {
-			wcout << "result: " << res.size() << endl;
-		}*/
-		if (manager->search_name(wstring(keyword), res, diskName)
-				== Result::SUCCESS) {
-			for (auto& p : res) {
-				wcout << p.get_path() << endl;
+			if (wstring(content) == L"") {
+				for (auto& p : res) {
+					wcout << p.get_path() << endl;
+				}
+				wcout << "result: " << res.size() << endl;
 			}
-			wcout << "result: " << res.size() << endl;
+			else {
+				FileContent* contentSearch = manager->getContentSearch();
+				SearchResult tmp_result;
+				while (contentSearch->next(content, tmp_result) != Result::FILEPOOL_EMPTY) {
+					if (tmp_result.get_content_results().size() > 0) {
+						wcout << tmp_result.get_content_results().size() << L" times in " << tmp_result.get_path() << endl;
+						res.push_back(tmp_result);
+						tmp_result = SearchResult();
+					}
+				}
+			}
 		}
 		end = clock();
 		wcout << (double)(end - start) / CLOCKS_PER_SEC << endl;

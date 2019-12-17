@@ -1,5 +1,6 @@
 #pragma once
 #include "utils.h"
+#include "FileBase.h"
 #include <Windows.h>
 #include <string>
 #include <unordered_set>
@@ -13,30 +14,29 @@ class FileBase;
 class DiskController
 {
 public:
-	DiskController(char diskName);
+	DiskController(char diskName, FileBase* fb);
 	~DiskController() {
-		deleteUSNJournal();
 		CloseHandle(hThread);
 		deleteUSNJournal();
 	}
 
-	Result loadFilenames(FileBase*);
+	Result loadFilenames();
 
 	char DiskName() const { return this->diskName; }
 
-	void WatchChanges(FileBase*);
+	void WatchChanges();
 
-	void startWatching(FileBase*);
+	void startWatching();
 
 private:
 	Result createHandle();
 	Result createUSNJournal();
 	Result queryUSNJournal();
-	Result getUSNJournalInfo(FileBase*);
+	Result getUSNJournalInfo();
 	Result deleteUSNJournal();
 
 	Result WaitNextUsn(PREAD_USN_JOURNAL_DATA_V0);
-	Result ReadChanges(USN, FileBase*);
+	Result ReadChanges(USN);
 	Result ReadJournalForChanges(USN, DWORD*);
 
 private:
@@ -52,6 +52,8 @@ private:
 	DWORDLONG journal_id;
 
 	HANDLE hThread;
+
+	FileBase* fb;
 };
 
 } // namespace Nothing
