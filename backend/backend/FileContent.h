@@ -14,7 +14,10 @@ public:
 	FileContent() {}
 
 	Result add_file(DWORDLONG ref, const std::wstring& path) {
-		files.emplace_back(ref, path);
+		WIN32_FIND_DATAW FindFileData;
+		FindClose(FindFirstFileW(path.c_str(), &FindFileData));
+		if (!(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+			files.emplace_back(ref, path);
 		return Result::SUCCESS;
 	}
 
