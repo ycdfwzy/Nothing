@@ -14,8 +14,8 @@
 using namespace std;
 using namespace Nothing;
 
-char diskName = 'E';
-wstring path(L"E:\\大四上\\云数据管理(2)\\智能数据分析\\智能数据分析大作业");
+char diskName = 'C';
+wstring path(L"C:\\Users\\NaXin\\Documents\\THU\\大四上\\云数据管理2");
 
 int main() {
 	locale loc("chs");
