@@ -11,13 +11,37 @@
 #include "SearchResult.h"
 #include "GeneralManager.h"
 
+#ifdef _DEBUG
+#undef _DEBUG
+#include <Python.h>
+#define _DEBUG
+#else
+#include <Python.h>
+#endif
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+#include <pybind11/pybind11.h>
+#include <pybind11/eval.h>
+#include <pybind11/embed.h>
+
+#pragma GCC diagnostic pop
+
+namespace py = pybind11;
+using namespace py::literals;
+
 using namespace std;
 using namespace Nothing;
 
-char diskName = 'E';
-wstring path(L"E:\\大四上\\云数据管理(2)\\智能数据分析\\智能数据分析大作业");
+char diskName = 'C';
+//wstring path(L"E:\\大四上\\云数据管理(2)\\智能数据分析\\智能数据分析大作业");
 
-int main() {
+int main(int argc, char** argv) {
+	// Initialize python
+	Py_OptimizeFlag = 1;
+	Py_SetProgramName(L"PythonFileReader");
+
 	locale loc("chs");
 	wcin.imbue(loc);
 	wcout.imbue(loc);

@@ -1,13 +1,25 @@
 #include "FileContent.h"
 #include <fstream>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+#include <pybind11/pybind11.h>
+#include <pybind11/eval.h>
+#include <pybind11/embed.h>
+
+#pragma GCC diagnostic pop
+
+namespace py = pybind11;
+using namespace py::literals;
+
 using namespace std;
 using namespace Nothing;
 
-CONTENT_SEARCH_RESULT get_pred_succ(const wstring& raw, int start, int end, int len = 3) {
+CONTENT_SEARCH_RESULT get_pred_succ(const wstring& raw, UINT start, UINT end, UINT len = 3) {
 	PREDECESSOR_CONTENT pred;
-	for (int i = 1; i <= len; i++) {
-		if (start - i >= 0)
+	for (UINT i = 1; i <= len; i++) {
+		if (start >= i)
 			pred = raw[start - i] + pred;
 		else
 			break;
@@ -16,7 +28,7 @@ CONTENT_SEARCH_RESULT get_pred_succ(const wstring& raw, int start, int end, int 
 		pred = L"..." + pred;
 
 	SUCCESSOR_CONTENT succ;
-	for (int i = 1; i <= len; i++) {
+	for (UINT i = 1; i <= len; i++) {
 		if (end + i < raw.length())
 			succ = succ + raw[end + i];
 		else
@@ -43,7 +55,7 @@ Result FileContent::next(const wstring& keyword,
 		name = path[t] + name;
 		t--;
 	}
-
+	/*
 	if (isText(path)) { // plain text
 		// open file
 		wifstream fin(path);
@@ -67,9 +79,9 @@ Result FileContent::next(const wstring& keyword,
 			}
 		}
 		fin.close();
-	}
-	else if (isPDF(path)) { // pdf
-		PDFReader* reader = PDFReader::getInstance();
+	}*/
+	//else if (isPDF(path)) { // pdf
+		/*PDFReader* reader = PDFReader::getInstance();
 		reader->setPath(path);
 		wstring cont;
 		Result r = reader->getContent(cont);
@@ -84,8 +96,38 @@ Result FileContent::next(const wstring& keyword,
 				p = cont.find(content, p + content.length());
 			}
 		}
-		return r;
+		return r;*/
+	//}
+
+	try {
+		py::scoped_interpreter guard{};
+
+		// Disable build of __pycache__ folders
+		py::exec(R"(
+            import sys
+            sys.dont_write_bytecode = True
+        )");
+
+		auto example = py::module::import("reader.FileReader");
+
+		const auto myExampleClass = example.attr("FileReader");
+		auto myExampleInstance = myExampleClass(path);
+
+		const auto cont = myExampleInstance.attr("getContent")().cast<std::wstring>();
+		auto p = cont.find(content);
+		while (p != cont.npos) {
+			if (sr.get_reference() != ref) {
+				sr = SearchResult(ref, name, path, keyword, content);
+			}
+			auto cont_rst = get_pred_succ(cont, p, p + content.length() - 1);
+			sr.add_content(cont_rst);
+			p = cont.find(content, p + content.length());
+		}
 	}
-	
+	catch (std::exception & e) {
+		std::cerr << "Python read file wrong: " << e.what() << std::endl;
+		return Result::PYTHON_RUNTIME_ERROR;
+	}
+
 	return Result::SUCCESS;
 }
