@@ -22,7 +22,7 @@ public:
 	}
 
 	bool empty() const { return files.empty(); }
-	Result next(const std::wstring&, SearchResult&);
+	Result next(const std::wstring&, const std::wstring&, SearchResult&);
 
 private:
 	std::vector<std::pair<DWORDLONG, std::wstring>> files;

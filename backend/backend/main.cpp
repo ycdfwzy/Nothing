@@ -59,7 +59,7 @@ int main() {
 			else {
 				FileContent* contentSearch = manager->getContentSearch();
 				SearchResult tmp_result;
-				while (contentSearch->next(content, tmp_result) != Result::FILEPOOL_EMPTY) {
+				while (contentSearch->next(keyword, content, tmp_result) != Result::FILEPOOL_EMPTY) {
 					if (tmp_result.get_content_results().size() > 0) {
 						wcout << tmp_result.get_content_results().size() << L" times in " << tmp_result.get_path() << endl;
 						res.push_back(tmp_result);

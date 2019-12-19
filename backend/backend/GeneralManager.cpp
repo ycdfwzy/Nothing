@@ -198,7 +198,7 @@ Result GeneralManager::search_content(const wstring& keyword,
 	wstring curpath;*/
 	res.clear();
 	SearchResult tmp_result;
-	while (contentSearch->next(keyword, tmp_result) != Result::FILEPOOL_EMPTY) {
+	while (contentSearch->next(keyword, keyword, tmp_result) != Result::FILEPOOL_EMPTY) {
 		if (tmp_result.get_content_results().size() > 0) {
 			wcout << tmp_result.get_content_results().size() << L" times in " << tmp_result.get_path() << endl;
 			res.push_back(tmp_result);

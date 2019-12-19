@@ -28,6 +28,7 @@ CONTENT_SEARCH_RESULT get_pred_succ(const wstring& raw, int start, int end, int 
 }
 
 Result FileContent::next(const wstring& keyword,
+						const wstring& content,
 						SearchResult& sr) {
 	if (this->empty()) return Result::FILEPOOL_EMPTY;
 
@@ -55,14 +56,14 @@ Result FileContent::next(const wstring& keyword,
 		while (!fin.eof()) {
 			getline(fin, line);
 			// check every line
-			auto p = line.find(keyword);
+			auto p = line.find(content);
 			while (p != line.npos) {
 				if (sr.get_reference() != ref) {
-					sr = SearchResult(ref, name, path, keyword, true);
+					sr = SearchResult(ref, name, path, keyword, content);
 				}
-				auto cont_rst = get_pred_succ(line, p, p + keyword.length() - 1);
+				auto cont_rst = get_pred_succ(line, p, p + content.length() - 1);
 				sr.add_content(cont_rst);
-				p = line.find(keyword, p + keyword.length());
+				p = line.find(content, p + content.length());
 			}
 		}
 		fin.close();
@@ -73,14 +74,14 @@ Result FileContent::next(const wstring& keyword,
 		wstring cont;
 		Result r = reader->getContent(cont);
 		if (r == Result::SUCCESS) {
-			auto p = cont.find(keyword);
+			auto p = cont.find(content);
 			while (p != cont.npos) {
 				if (sr.get_reference() != ref) {
-					sr = SearchResult(ref, name, path, keyword, true);
+					sr = SearchResult(ref, name, path, keyword, content);
 				}
-				auto cont_rst = get_pred_succ(cont, p, p + keyword.length() - 1);
+				auto cont_rst = get_pred_succ(cont, p, p + content.length() - 1);
 				sr.add_content(cont_rst);
-				p = cont.find(keyword, p + keyword.length());
+				p = cont.find(content, p + content.length());
 			}
 		}
 		return r;
