@@ -11,13 +11,32 @@
 #include "SearchResult.h"
 #include "GeneralManager.h"
 
+#ifdef _DEBUG
+#undef _DEBUG
+#include <Python.h>
+#define _DEBUG
+#else
+#include <Python.h>
+#endif
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+#include <pybind11/pybind11.h>
+#include <pybind11/eval.h>
+#include <pybind11/embed.h>
+
+#pragma GCC diagnostic pop
+
+namespace py = pybind11;
+using namespace py::literals;
+
 using namespace std;
 using namespace Nothing;
 
 char diskName = 'C';
-wstring path(L"C:\\Users\\NaXin\\Documents\\THU\\´óËÄÉÏ\\ÔÆÊý¾Ý¹ÜÀí2");
+wstring path(L"C:\\Users\\NaXin\\Documents\\THU\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½ï¿½Ý¹ï¿½ï¿½ï¿½2");
 
-int main() {
 	locale loc("chs");
 	wcin.imbue(loc);
 	wcout.imbue(loc);
@@ -59,7 +78,7 @@ int main() {
 			else {
 				FileContent* contentSearch = manager->getContentSearch();
 				SearchResult tmp_result;
-				while (contentSearch->next(content, tmp_result) != Result::FILEPOOL_EMPTY) {
+				while (contentSearch->next(keyword, content, tmp_result) != Result::FILEPOOL_EMPTY) {
 					if (tmp_result.get_content_results().size() > 0) {
 						wcout << tmp_result.get_content_results().size() << L" times in " << tmp_result.get_path() << endl;
 						res.push_back(tmp_result);

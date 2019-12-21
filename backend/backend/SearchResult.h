@@ -20,10 +20,10 @@ public:
 		const std::wstring& name,
 		const std::wstring& path,
 		const std::wstring& keyword,
-		bool include_contents = false) :
+		const std::wstring& content = L"") :
 			ref(ref), name(name), path(path),
 			keyword(keyword),
-			include_contents(include_contents) {};
+			content(content) {};
 
 	Result add_content(const PREDECESSOR_CONTENT&, const SUCCESSOR_CONTENT&);
 	Result add_content(const CONTENT_SEARCH_RESULT&);
@@ -46,12 +46,11 @@ public:
 	}
 
 private:
-	bool include_contents;
-
 	DWORDLONG ref;
 	std::wstring name;
 	std::wstring path;
 	std::wstring keyword;
+	std::wstring content;
 
 	std::vector<CONTENT_SEARCH_RESULT> content_results;
 };
