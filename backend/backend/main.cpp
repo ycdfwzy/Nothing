@@ -34,7 +34,7 @@ using namespace py::literals;
 using namespace std;
 using namespace Nothing;
 
-char diskName = 'C';
+char diskName = 'D';
 //wstring path(L"E:\\大四上\\云数据管理(2)\\智能数据分析\\智能数据分析大作业");
 
 int main(int argc, char** argv) {
