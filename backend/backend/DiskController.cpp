@@ -203,7 +203,7 @@ Result DiskController::queryUSNJournal() {
 Result DiskController::getUSNJournalInfo() {
 	MFT_ENUM_DATA_V0 med;
 	med.StartFileReferenceNumber = 0;
-	med.LowUsn = this->ujd.FirstUsn;
+	med.LowUsn = 0; // his->ujd.FirstUsn;
 	med.HighUsn = this->ujd.NextUsn;
 
 	DWORD lpBytesReturned;

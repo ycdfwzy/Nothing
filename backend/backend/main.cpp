@@ -37,7 +37,11 @@ using namespace Nothing;
 char diskName = 'E';
 wstring path(L"E:\\THU");
 
-int main() {
+int main(int argc, char** argv) {
+	// Initialize python
+	Py_OptimizeFlag = 1;
+	Py_SetProgramName(L"PythonFileReader");
+
 	locale loc("chs");
 	wcin.imbue(loc);
 	wcout.imbue(loc);
