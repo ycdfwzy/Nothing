@@ -34,9 +34,10 @@ using namespace py::literals;
 using namespace std;
 using namespace Nothing;
 
-char diskName = 'C';
-wstring path(L"C:\\Users\\NaXin\\Documents\\THU\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½ï¿½Ý¹ï¿½ï¿½ï¿½2");
+char diskName = 'E';
+wstring path(L"E:\\THU");
 
+int main() {
 	locale loc("chs");
 	wcin.imbue(loc);
 	wcout.imbue(loc);
@@ -58,9 +59,9 @@ wstring path(L"C:\\Users\\NaXin\\Documents\\THU\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿
 		WCHAR content[256];
 		wcin.getline(content, 256, L'\n');
 
-		wcout << L"Please input path:" << endl;
-		WCHAR path[MAX_PATH];
-		wcin.getline(path, MAX_PATH, L'\n');
+		//wcout << L"Please input path:" << endl;
+		//WCHAR path[MAX_PATH];
+		//wcin.getline(path, MAX_PATH, L'\n');
 
 		vector<SearchResult> res;
 		res.clear();

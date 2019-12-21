@@ -252,6 +252,7 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionadd_disk"/>
     <addaction name="actionexit_2"/>
    </widget>
    <addaction name="menuFile"/>
@@ -265,6 +266,11 @@
   <action name="actionexit_2">
    <property name="text">
     <string>exit</string>
+   </property>
+  </action>
+  <action name="actionadd_disk">
+   <property name="text">
+    <string>add disk</string>
    </property>
   </action>
  </widget>

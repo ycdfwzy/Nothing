@@ -31,14 +31,23 @@
     <ClCompile Include="frontend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DiskDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="frontend.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="DiskDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="frontend.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="DiskDialog.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

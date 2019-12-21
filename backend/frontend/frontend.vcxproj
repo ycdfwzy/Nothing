@@ -67,11 +67,13 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <AdditionalIncludeDirectories>C:\Users\NaXin\source\repos\pybind11\include;C:\Users\NaXin\AppData\Local\Programs\Python\Python37;C:\Users\NaXin\AppData\Local\Programs\Python\Python37\include;../backend;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\NaXin\AppData\Local\Programs\Python\Python37\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -80,6 +82,7 @@
       <DebugInformationFormat />
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <AdditionalIncludeDirectories>..\backend;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -88,6 +91,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DiskDialog.cpp" />
     <ClCompile Include="frontend.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -95,10 +99,19 @@
     <QtMoc Include="frontend.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtUic Include="DiskDialog.ui" />
     <QtUic Include="frontend.ui" />
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="frontend.qrc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\backend\backend.vcxproj">
+      <Project>{ff5eca3d-77be-4fcd-a612-5679794abf28}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="DiskDialog.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
