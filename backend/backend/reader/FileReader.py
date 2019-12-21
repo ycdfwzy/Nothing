@@ -31,5 +31,5 @@ class FileReader:
 
 
 if __name__ == '__main__':
-    reader = FileReader(r'D:\THU\learn-github-from-zero.pdf')
+    reader = FileReader(r'D:\Program Files\MATLAB\R2018b\help\simulink\ug\share-project-on-github.html')
     print(reader.getContent())

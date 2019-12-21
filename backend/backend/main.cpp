@@ -34,7 +34,7 @@ using namespace py::literals;
 using namespace std;
 using namespace Nothing;
 
-char diskName = 'D';
+char diskName = 'C';
 //wstring path(L"E:\\大四上\\云数据管理(2)\\智能数据分析\\智能数据分析大作业");
 
 int main(int argc, char** argv) {
@@ -75,9 +75,9 @@ int main(int argc, char** argv) {
 		if (manager->search(res, keyword, content, path)
 				== Result::SUCCESS) {
 			if (wstring(content) == L"") {
-				for (auto& p : res) {
+				/*for (auto& p : res) {
 					wcout << p.get_path() << endl;
-				}
+				}*/
 				wcout << "result: " << res.size() << endl;
 			}
 			else {

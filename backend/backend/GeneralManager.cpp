@@ -46,6 +46,11 @@ GeneralManager::~GeneralManager() {
 	file_base.clear();
 }
 
+unsigned WINAPI preprocess(void* param) {
+	((FileBase*)param)->preprocess();
+	return 0;
+}
+
 Result GeneralManager::addDisk(char diskName) {
 	if (disk_base.find(diskName) != disk_base.end()) {
 		return Result::NO_DISK;
@@ -61,13 +66,18 @@ Result GeneralManager::addDisk(char diskName) {
 	disk_base[diskName] = new DiskController(diskName, file_base[diskName]);
 	r = disk_base[diskName]->loadFilenames();
 	if (r != Result::SUCCESS) {
+		delete disk_base[diskName];
+		delete file_base[diskName];
 		disk_base.erase(diskName);
 		file_base.erase(diskName);
 	}
 	else {
-		disk_base[diskName]->startWatching();
 		file_base[diskName]->count_files();
-		file_base[diskName]->preprocess();
+		// preprocess is sometimes too slow, put it into a new thread
+		UINT threadId;
+		_beginthreadex(NULL, 0, &preprocess, (void*)file_base[diskName], 0, &threadId);
+		// file_base[diskName]->preprocess();
+		disk_base[diskName]->startWatching();
 	}
 	return r;
 }

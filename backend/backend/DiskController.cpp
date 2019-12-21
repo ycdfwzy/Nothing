@@ -225,7 +225,6 @@ Result DiskController::getUSNJournalInfo() {
 			for (int k = 0; k < pusn_record->FileNameLength / 2; k++)
 				filename[k] = pusn_record->FileName[k];
 			filename[pusn_record->FileNameLength / 2] = L'\0';
-			// wcout << filename << endl;
 			fb->add_file(filename,
 						 pusn_record->FileReferenceNumber,
 						 pusn_record->ParentFileReferenceNumber);

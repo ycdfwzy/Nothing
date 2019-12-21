@@ -2,6 +2,7 @@
 #include <fstream>
 #include <functional>
 #include <stack>
+#include <queue>
 
 using namespace std;
 using namespace Nothing;
@@ -12,7 +13,7 @@ Result FileBase::getPath(DWORDLONG ref, std::wstring& res) const {
 	}
 	res = refmap.at(ref).name;
 	ref = refmap.at(ref).parent;
-	while (ref != 0 && refmap.find(ref) != refmap.end()) {
+	while (ref != 0 && refmap.find(ref) != refmap.end() && res.length() < MAX_PATH) {
 		res = refmap.at(ref).name + L"\\" + res;
 		ref = refmap.at(ref).parent;
 	}
@@ -62,15 +63,17 @@ void FileBase::add_file_watching(const std::wstring& filename,
 void FileBase::delete_file_watching(DWORDLONG ref_num) {
 	WaitForSingleObject(hMutex, INFINITE);
 
-	if (refmap.find(ref_num) == refmap.end())
+	if (refmap.find(ref_num) == refmap.end()) {
+		ReleaseMutex(hMutex);
 		return;
+	}
 	// update index
 	this->removeIndex(ref_num);
 	// update tree
 	this->deleteTreeLink(ref_num, refmap.at(ref_num).parent);
 
 	vector<DWORDLONG> tmp;
-	DFS(ref_num, tmp);
+	BFS(ref_num, tmp);
 	for (auto ref : tmp) {
 		this->refmap.erase(ref);
 		// this->father.erase(ref);
@@ -86,20 +89,26 @@ void FileBase::change_file_watching(const std::wstring& filename,
 									DWORDLONG par_num) {
 	WaitForSingleObject(hMutex, INFINITE);
 
-	if (refmap.find(ref_num) == refmap.end())
+	if (refmap.find(ref_num) == refmap.end()) {
+		ReleaseMutex(hMutex);
 		return;
+	}
 	if (refmap.at(ref_num).name != filename ||
 		refmap.at(ref_num).parent != par_num) {
-		if (refmap.at(ref_num).name != filename) {
+		bool filenameChanged = (refmap.at(ref_num).name != filename);
+		if (filenameChanged) {
 			this->removeIndex(ref_num);
 		}
+
 		if (refmap.at(ref_num).parent != par_num) {
 			this->deleteTreeLink(ref_num, refmap.at(ref_num).parent);
 			this->insertTreeLink(ref_num, par_num);
 		}
 
 		refmap[ref_num] = FileName(filename, par_num);
-		this->addIndex(ref_num);
+		if (filenameChanged) {
+			this->addIndex(ref_num);
+		}
 	}
 
 	ReleaseMutex(hMutex);
@@ -109,6 +118,9 @@ Result FileBase::search_by_name(const wstring& keyword,
 							  vector<SearchResult>& res,
 							  bool need_clear_res,
 							  DWORDLONG master_path) const {
+	WaitForSingleObject(hMutex, INFINITE);
+
+	// wcout << keyword << endl;
 	if (keyword.empty()) {
 		if (master_path == 0) {
 			for (const auto& p : refmap) {
@@ -120,7 +132,7 @@ Result FileBase::search_by_name(const wstring& keyword,
 		}
 		else {
 			vector<DWORDLONG> seq;
-			DFS(master_path, seq);
+			BFS(master_path, seq);
 			for (const auto& p : seq) {
 				wstring tmp;
 				if (getPath(p, tmp) == Result::SUCCESS) {
@@ -128,6 +140,7 @@ Result FileBase::search_by_name(const wstring& keyword,
 				}
 			}
 		}
+		ReleaseMutex(hMutex);
 		return Result::KEYWORD_EMPTY;
 	}
 	if (need_clear_res) {
@@ -138,10 +151,13 @@ Result FileBase::search_by_name(const wstring& keyword,
 	if (master_path != 0)
 		this->getPath(master_path, master_path_s);
 
+	// wcout << "before equal_range" << endl;
 	auto p = index.equal_range(keyword.at(0));
+	// wcout << "after equal_range" << endl;
 	for (auto I = p.first; I != p.second; I++) {
 		DWORDLONG ref = (*I).second;
 		wstring filename = refmap.at(ref).name;
+		// wcout << filename << endl;
 		if (filename.find(keyword) != filename.npos) {
 			wstring path;
 			if (this->getPath(ref, path) == Result::SUCCESS &&
@@ -150,10 +166,13 @@ Result FileBase::search_by_name(const wstring& keyword,
 			}
 		}
 	}
+	ReleaseMutex(hMutex);
 	return Result::SUCCESS;
 }
 
 Result FileBase::preprocess() {
+	WaitForSingleObject(hMutex, INFINITE);
+
 	// $RmMetadata
 	// System Volume Information
 	vector<DWORDLONG> to_delete;
@@ -194,24 +213,18 @@ Result FileBase::preprocess() {
 		insertTreeLink(p.first, p.second.parent);
 	}
 	//-------------------------------------------
-	/*this->DFSseq.clear();
-	this->DFSseq.reserve(this->refmap.size());
-
-	for (auto& p : to_insert)
-		if (find(to_delete.begin(), to_delete.end(), p) == to_delete.end())
-			DFS(p, false, to_delete, &firstSon, &nextSibling);
-		else
-			DFS(p, true, to_delete, &firstSon, &nextSibling);*/
-	// wcout << this->refmap.size() << endl;
 	vector<DWORDLONG> tmp;
 	for (auto ref : to_delete) {
-		DFS(ref, tmp);
+		BFS(ref, tmp);
 	}
 	for (auto ref : tmp) {
 		this->refmap.erase(ref);
 	}
 
 	this->makeIndex();
+
+	ReleaseMutex(hMutex);
+	wcout << "pre-process is over!" << endl;
 
 	return Result::SUCCESS;
 }
@@ -224,7 +237,7 @@ Result FileBase::getAllFiles(DWORDLONG root,
 	res.clear();
 	if (no_directory) {
 		vector<DWORDLONG> tmp;
-		DFS(root, tmp);
+		BFS(root, tmp);
 		for (auto ref : tmp) {
 			wstring path;
 			if (this->getPath(ref, path) == Result::SUCCESS) {
@@ -238,7 +251,7 @@ Result FileBase::getAllFiles(DWORDLONG root,
 		}
 	}
 	else {
-		DFS(root, res);
+		BFS(root, res);
 	}
 
 	ReleaseMutex(hMutex);
@@ -256,6 +269,8 @@ Result FileBase::makeIndex() {
 			this->index.insert(make_pair(c, p.first));
 		}
 	}
+	/*wcout << this->index.size() << endl;
+	wcout << this->index.max_size() << endl;*/
 	return Result::SUCCESS;
 }
 
@@ -294,8 +309,10 @@ Result FileBase::getReference(const std::wstring& path,
 	WaitForSingleObject(hMutex, INFINITE);
 
 	vector<wstring> splited_path;
-	if (!this->splitPath(path, splited_path))
+	if (!this->splitPath(path, splited_path)) {
+		ReleaseMutex(hMutex);
 		return Result::PATH_INVALID;
+	}
 
 	vector<DWORDLONG> queue;
 	for (auto& q : roots)
@@ -312,29 +329,12 @@ Result FileBase::getReference(const std::wstring& path,
 			}
 		}
 		if (!found) {
+			ReleaseMutex(hMutex);
 			return Result::PATH_INVALID;
 		}
 	}
 
 	ReleaseMutex(hMutex);
-	//INTERVAL itv = make_pair(0, this->DFSseq.size());
-	//for (const wstring& filename : splited_path) {
-	//	// wcout << filename << endl;
-	//	size_t idx = itv.first;
-	//	while (idx < itv.second) {
-	//		DWORDLONG ref_ = this->DFSseq[idx];
-	//		// wcout << this->refmap.at(ref_).name << endl;
-	//		if (this->refmap.at(ref_).name == filename) {
-	//			ref = ref_;
-	//			itv = make_pair(interval.at(ref_).first+1, interval.at(ref_).second);
-	//			break;
-	//		}
-	//		idx = interval.at(ref_).second;
-	//	}
-	//	if (idx >= itv.second)
-	//		return Result::PATH_INVALID;
-	//}
-
 	return Result::SUCCESS;
 }
 
@@ -387,13 +387,24 @@ void FileBase::DFS(DWORDLONG cur, bool need_deleting, const vector<DWORDLONG>& t
 	}*/
 }
 
-void FileBase::DFS(DWORDLONG cur, vector<DWORDLONG>& trace) const {
-	trace.push_back(cur);
-	if (firstSon.find(cur) != firstSon.end()) {
-		DFS(firstSon.at(cur), trace);
+void FileBase::BFS(DWORDLONG root, vector<DWORDLONG>& trace) const {
+	queue<DWORDLONG> que;
+	while (!que.empty())
+		que.pop();
+	trace.push_back(root);
+	if (firstSon.find(root) != firstSon.end()) {
+		que.push(firstSon.at(root));
 	}
-	if (nextSibling.find(cur) != nextSibling.end()) {
-		DFS(nextSibling.at(cur), trace);
+	while (!que.empty()) {
+		auto cur = que.front();
+		que.pop();
+		trace.push_back(cur);
+		if (firstSon.find(cur) != firstSon.end()) {
+			que.push(firstSon.at(cur));
+		}
+		if (nextSibling.find(cur) != nextSibling.end()) {
+			que.push(nextSibling.at(cur));
+		}
 	}
 }
 
