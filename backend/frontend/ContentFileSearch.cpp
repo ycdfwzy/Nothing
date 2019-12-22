@@ -20,7 +20,7 @@ void ContentFileSearch::run() {
 	Nothing::SearchResult tmp_res;
 	while (searching && content_search->next(keyword, content, tmp_res) != Nothing::Result::FILEPOOL_EMPTY) {
 		if (tmp_res.get_content_results().size() > 0) {
-			qDebug() << "in content found file: " << tmp_res.get_name();
+			// qDebug() << "in content found file: " << tmp_res.get_name();
 			emit(foundFile(tmp_res));
 			tmp_res = Nothing::SearchResult();
 		}

@@ -28,13 +28,9 @@ frontend::frontend(QWidget *parent)
 	ui.tableWidget->setColumnWidth(4, 200);
 	ui.tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
 	ui.tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
-	connect(ui.tableWidget, SIGNAL(itemSelectionChanged()), this, SLOT(updateHits()));
 
-	// status bar init
-	status_label = new QLabel();
-	status_label->setMinimumSize(150, 20);
-	ui.statusBar->addWidget(status_label);
-	
+	// signal connection
+	connect(ui.tableWidget, SIGNAL(itemSelectionChanged()), this, SLOT(updateHits()));
 	connect(ui.path_btn, SIGNAL(clicked()), this, SLOT(setSearchPath()));
 	connect(ui.actionadd_disk, SIGNAL(triggered()), this, SLOT(addDiskDialog()));
 	connect(ui.start_btn, SIGNAL(clicked()), this, SLOT(startSearch()));
@@ -46,7 +42,11 @@ frontend::frontend(QWidget *parent)
 	disk_added = new bool[disk_num];
 	for (int i = 0; i < disk_num; i++) disk_added[i] = false;
 	is_searching_content = false;
-	
+
+	// status bar init
+	status_label = new QLabel();
+	status_label->setMinimumSize(150, 20);
+	ui.statusBar->addWidget(status_label);
 	status_label->setText(tr("Ready!"));
 }
 
@@ -71,7 +71,7 @@ void frontend::startSearch() {
 
 	bool with_content = ui.checkBox->isChecked() && content != L"";
 
-	qDebug() << "search keyword: " << q_keyword << ", content: " << q_content << ", in: " << q_path;
+	// qDebug() << "search keyword: " << q_keyword << ", content: " << q_content << ", in: " << q_path;
 	updateStatus(3);
 
 	result_list.clear();
@@ -108,13 +108,18 @@ void frontend::startSearch() {
 }
 
 void frontend::stopSearch() {
+	// only able to stop on content search
 	if (!is_searching_content) return;
 	search_thread->searching = false;
 	is_searching_content = false;
 	search_thread->wait();
+
+	// restore ui
 	ui.start_btn->setEnabled(true);
 	ui.actionadd_disk->setEnabled(true);
 	ui.stop_btn->setEnabled(false);
+
+	// update status
 	updateSummary();
 	updateHits();
 	updateStatus(2);
@@ -132,7 +137,7 @@ void frontend::addDisks(QList<QPair<int, QString>> disks) {
 	updateStatus(1);
 	for (auto i = disks.begin(); i != disks.end(); i++) {
 		this->disk_added[i->first] = true;
-		qDebug() << "addDisk " << i->first << " " << i->second;
+		// qDebug() << "addDisk " << i->first << " " << i->second;
 
 		manager->addDisk(i->second.toStdString()[0]);
 	}
@@ -248,7 +253,7 @@ void frontend::addFileToTable(QFileInfo& info) {
 }
 
 void frontend::foundFile(Nothing::SearchResult tmp_res) {
-	qDebug() << "in frontend found file: " << tmp_res.get_name();
+	// qDebug() << "in frontend found file: " << tmp_res.get_name();
 	addFileToTable(QFileInfo(QString::fromStdWString(tmp_res.get_path())));
 	result_list.push_back(tmp_res);
 }
