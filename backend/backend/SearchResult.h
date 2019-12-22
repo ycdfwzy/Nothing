@@ -41,6 +41,10 @@ public:
 		return this->path;
 	}
 
+	std::wstring get_content() const {
+		return this->content;
+	}
+
 	DWORDLONG get_reference() const {
 		return this->ref;
 	}

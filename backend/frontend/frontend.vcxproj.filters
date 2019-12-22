@@ -34,12 +34,18 @@
     <ClCompile Include="DiskDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ContentFileSearch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="frontend.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="DiskDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="ContentFileSearch.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

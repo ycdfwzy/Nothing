@@ -82,15 +82,17 @@
       <DebugInformationFormat />
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <AdditionalIncludeDirectories>..\backend;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\backend;C:\Users\NaXin\AppData\Local\Programs\Python\Python37\include;C:\Users\NaXin\AppData\Local\Programs\Python\Python37;C:\Users\NaXin\source\repos\pybind11\include;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\NaXin\AppData\Local\Programs\Python\Python37\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ContentFileSearch.cpp" />
     <ClCompile Include="DiskDialog.cpp" />
     <ClCompile Include="frontend.cpp" />
     <ClCompile Include="main.cpp" />
@@ -112,6 +114,9 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="DiskDialog.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="ContentFileSearch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

@@ -91,6 +91,7 @@ void FileBase::change_file_watching(const std::wstring& filename,
 	if (refmap.at(ref_num).name != filename ||
 		refmap.at(ref_num).parent != par_num) {
 		if (refmap.at(ref_num).name != filename) {
+#define FILENAMECHANGED
 			this->removeIndex(ref_num);
 		}
 		if (refmap.at(ref_num).parent != par_num) {
@@ -99,7 +100,10 @@ void FileBase::change_file_watching(const std::wstring& filename,
 		}
 
 		refmap[ref_num] = FileName(filename, par_num);
+#ifdef FILENAMECHANGED
 		this->addIndex(ref_num);
+#undef FILENAMECHANGED
+#endif
 	}
 
 	ReleaseMutex(hMutex);

@@ -19,6 +19,7 @@
 
 #include "GeneralManager.h"
 #include <qdir.h>
+#include "ContentFileSearch.h"
 
 class frontend : public QMainWindow
 {
@@ -33,12 +34,22 @@ private:
 
 	Nothing::GeneralManager* manager;
 	bool* disk_added;
+	// only true when searching with content
+	bool is_searching_content;
+	ContentFileSearch* search_thread;
+	std::vector<Nothing::SearchResult> result_list;
+
+private:
+	void addFileToTable(QFileInfo& info);
 	
 public slots:
 	void setSearchPath();
 	void startSearch();
 	void stopSearch();
+	void foundFile(Nothing::SearchResult tmp_res);
 	void addDisks(QList<QPair<int, QString>> disks);
 	void addDiskDialog();
 	void updateStatus(int status);
+	void updateSummary();
+	void updateHits();
 };
