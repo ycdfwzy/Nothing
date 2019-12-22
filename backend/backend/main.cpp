@@ -75,9 +75,9 @@ int main(int argc, char** argv) {
 		if (manager->search(res, keyword, content, path)
 				== Result::SUCCESS) {
 			if (wstring(content) == L"") {
-				for (auto& p : res) {
+				/*for (auto& p : res) {
 					wcout << p.get_path() << endl;
-				}
+				}*/
 				wcout << "result: " << res.size() << endl;
 			}
 			else {

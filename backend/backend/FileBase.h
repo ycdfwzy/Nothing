@@ -43,25 +43,6 @@ public:
 
 	void count_files() const {
 		std::wcout << L"total files in volume " << diskName << L": " << this->refmap.size() << std::endl;
-
-		/*int cnt = 0;
-		int max_cnt = 0;
-		WCHAR max_arg;
-		auto I = index.begin();
-		while (I != index.end()) {
-			cnt++;
-			WCHAR key = (*I).first;
-			auto p = index.equal_range(key);
-			I = p.second;
-			int tmp = index.count(key);
-			if (max_cnt < tmp) {
-				max_cnt = tmp;
-				max_arg = key;
-			}
-		}
-		std::wcout << index.size() << L" values" << std::endl;
-		std::wcout << cnt << L" different keys" << std::endl;
-		std::wcout << max_arg << L" maximum counts: " << max_cnt << std::endl;*/
 	}
 
 	Result preprocess();
@@ -76,7 +57,7 @@ private:
 	void removeIndex(DWORDLONG);
 	bool splitPath(const std::wstring&, std::vector<std::wstring>&) const;
 	void DFS(DWORDLONG, bool, const std::vector<DWORDLONG>&) const;
-	void DFS(DWORDLONG, std::vector<DWORDLONG>&) const;
+	void BFS(DWORDLONG, std::vector<DWORDLONG>&) const;
 	void getAllSons(DWORDLONG, std::vector<DWORDLONG>&) const;
 	void deleteTreeLink(DWORDLONG, DWORDLONG);
 	void insertTreeLink(DWORDLONG ref_num, DWORDLONG par_num) {
