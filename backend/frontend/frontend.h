@@ -40,7 +40,7 @@ private:
 	std::vector<Nothing::SearchResult> result_list;
 
 private:
-	void addFileToTable(QFileInfo& info);
+	void addFileToTable(QFileInfo& info, int index, int hit_num);
 	
 public slots:
 	void setSearchPath();

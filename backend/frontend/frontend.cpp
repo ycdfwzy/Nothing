@@ -13,6 +13,7 @@
 #include "FileContent.h"
 #include "ContentFileSearch.h"
 #include <QMetaType>
+#include "QIntTableWidgetItem.h"
 
 frontend::frontend(QWidget *parent)
 	: QMainWindow(parent)
@@ -26,6 +27,7 @@ frontend::frontend(QWidget *parent)
 	ui.tableWidget->setColumnWidth(2, 400);
 	ui.tableWidget->setColumnWidth(3, 100);
 	ui.tableWidget->setColumnWidth(4, 200);
+	ui.tableWidget->setColumnWidth(5, 50);
 	ui.tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
 	ui.tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
@@ -59,6 +61,7 @@ void frontend::startSearch() {
 	// Ui Clear
 	ui.tableWidget->clearContents();
 	ui.tableWidget->setRowCount(0);
+	ui.tableWidget->setSortingEnabled(false);
 	ui.summary_browser->clear();
 	ui.hits_browser->clear();
 
@@ -87,8 +90,11 @@ void frontend::startSearch() {
 
 	// success search
 	if (!with_content) {
-		// show file info in table	
-		for (auto& p : result_list) addFileToTable(QFileInfo(QString::fromStdWString(p.get_path())));
+		// show file info in table
+		for (int i = 0; i < result_list.size(); i++)
+			addFileToTable(QFileInfo(QString::fromStdWString(result_list[i].get_path())), i, 0);
+		ui.tableWidget->setSortingEnabled(true);
+		ui.tableWidget->sortItems(5, Qt::AscendingOrder);
 		updateSummary();
 		updateStatus(2);
 	}
@@ -98,6 +104,7 @@ void frontend::startSearch() {
 		ui.stop_btn->setEnabled(true);
 		ui.start_btn->setEnabled(false);
 		ui.actionadd_disk->setEnabled(false);
+		ui.path_btn->setEnabled(false);
 		
 		// one by one search on new thread
 		search_thread = new ContentFileSearch(this, manager->getContentSearch(), keyword, content);
@@ -118,6 +125,9 @@ void frontend::stopSearch() {
 	ui.start_btn->setEnabled(true);
 	ui.actionadd_disk->setEnabled(true);
 	ui.stop_btn->setEnabled(false);
+	ui.path_btn->setEnabled(true);
+	ui.tableWidget->setSortingEnabled(true);
+	ui.tableWidget->sortItems(5, Qt::AscendingOrder);
 
 	// update status
 	updateSummary();
@@ -206,6 +216,7 @@ void frontend::updateSummary() {
 	ui.summary_browser->insertPlainText(QStringLiteral("Size on Disk: %1 KBytes\n").arg(total_size / 1000));
 	ui.summary_browser->insertPlainText(QStringLiteral("Folder Num: %1\n").arg(folder_num));
 	ui.summary_browser->insertPlainText(QStringLiteral("File Num: %1\n\n").arg(file_num));
+	if (result_list.size() == 0) return;
 	ui.summary_browser->insertPlainText(QStringLiteral("Largest File Size: %1 Bytes\n").arg(largest_size));
 	ui.summary_browser->insertPlainText(QStringLiteral("Smallest File Size£º %1 Bytes\n").arg(smallest_size));
 	ui.summary_browser->insertPlainText(QStringLiteral("Oldest modified file: %1\n").arg(oldest_mod.toString(Qt::ISODateWithMs)));
@@ -222,12 +233,12 @@ void frontend::updateHits()
 	QList<QTableWidgetItem*> items = ui.tableWidget->selectedItems();
 	int cnt = items.count();
 	for (int i = 0; i < cnt; i++) if (items.at(i)->column() == 0){
-		int row = ui.tableWidget->row(items.at(i));
-		ui.hits_browser->insertHtml("<B>" + QString::fromStdWString(result_list[row].get_path()) + "</B>");
+		int index = items.at(i)->data(Qt::UserRole).toInt();
+		ui.hits_browser->insertHtml("<B>" + QString::fromStdWString(result_list[index].get_path()) + "</B>");
 		ui.hits_browser->insertPlainText("\n");
 		int hit_cnt = 1;
-		QString q_content = QString::fromStdWString(result_list[row].get_content());
-		auto hit_list = result_list[row].get_content_results();
+		QString q_content = QString::fromStdWString(result_list[index].get_content());
+		auto hit_list = result_list[index].get_content_results();
 		for (auto p = hit_list.begin(); p != hit_list.end(); p++) {
 			ui.hits_browser->insertHtml("<span>" + QStringLiteral("hits %1: ").arg(hit_cnt) + "</span>");
 			ui.hits_browser->insertHtml("<span>" + QString::fromStdWString(p->first).replace('\n', "\\n") + "<span>");
@@ -240,7 +251,7 @@ void frontend::updateHits()
 	}
 }
 
-void frontend::addFileToTable(QFileInfo& info) {
+void frontend::addFileToTable(QFileInfo& info, int index, int hit_num) {
 	int row_cnt = ui.tableWidget->rowCount();
 	ui.tableWidget->insertRow(row_cnt);
 	QFileIconProvider provider;
@@ -250,10 +261,14 @@ void frontend::addFileToTable(QFileInfo& info) {
 	ui.tableWidget->setItem(row_cnt, 2, new QTableWidgetItem(info.absolutePath()));
 	ui.tableWidget->setItem(row_cnt, 3, new QTableWidgetItem(QStringLiteral("%1 Bytes").arg(info.size())));
 	ui.tableWidget->setItem(row_cnt, 4, new QTableWidgetItem(info.lastModified().toString(Qt::TextDate)));
+	ui.tableWidget->setItem(row_cnt, 5, new QIntTableWidgetItem(QString::number(hit_num)));
+	// set index
+	ui.tableWidget->item(row_cnt, 0)->setData(Qt::UserRole, index);
 }
 
 void frontend::foundFile(Nothing::SearchResult tmp_res) {
 	// qDebug() << "in frontend found file: " << tmp_res.get_name();
-	addFileToTable(QFileInfo(QString::fromStdWString(tmp_res.get_path())));
+	addFileToTable(QFileInfo(QString::fromStdWString(tmp_res.get_path())),
+		result_list.size(), tmp_res.get_content_results().size());
 	result_list.push_back(tmp_res);
 }
